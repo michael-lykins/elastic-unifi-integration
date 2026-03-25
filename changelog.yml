@@ -1,3 +1,8 @@
+- version: "0.7.3"
+  changes:
+    - description: Format WAN Throughput as Mbps (converted from bytes/sec), Device Status Table uptime as hours, Topology Uptime chart as decimal hours.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/13
 - version: "0.7.2"
   changes:
     - description: Fix dashboard ES|QL queries to use ECS-mapped observer.type values (udm→router, uap→wap, usw→switch) after CEL template ECS migration.
