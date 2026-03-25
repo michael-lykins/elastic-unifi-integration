@@ -1,3 +1,8 @@
+- version: "0.7.4"
+  changes:
+    - description: Fix Connected Clients KPI panels (Clients, Overview, Devices dashboards) — was incorrectly summing all polling intervals producing inflated counts; now uses MAX per device in the last 2 minutes then SUM.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/14
 - version: "0.7.3"
   changes:
     - description: Format WAN Throughput as Mbps (converted from bytes/sec), Device Status Table uptime as hours, Topology Uptime chart as decimal hours.
