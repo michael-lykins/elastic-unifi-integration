@@ -1,0 +1,83 @@
+format_version: 3.2.2
+name: unifi
+title: UniFi
+version: 0.7.5
+description: >
+  Monitor UniFi network devices using the UniFi Network Local API and syslog.
+  Collects per-device metrics (WAN stats, uplink latency, speedtest results,
+  connected clients) and syslog events (WiFi, DHCP, firewall, system).
+type: integration
+categories:
+  - network
+  - security
+conditions:
+  kibana:
+    version: "^8.13.0 || ^9.0.0"
+  elastic:
+    subscription: basic
+icons:
+  - src: /img/logo.svg
+    title: UniFi Logo
+    size: 32x32
+    type: image/svg+xml
+policy_templates:
+  - name: unifi
+    title: UniFi Network
+    description: Collect metrics and logs from UniFi devices
+    inputs:
+      - type: cel
+        title: UniFi Network API (CEL)
+        description: >
+          Poll the UniFi Network Local REST API for per-device metrics,
+          WAN stats, and uplink latency. Requires a UDM-Pro or UDM-SE
+          running UniFi OS with a local API key.
+        vars:
+          - name: url
+            type: url
+            title: UniFi API Base URL
+            description: >
+              Base URL of your UDM-Pro (e.g. https://192.168.1.1 or
+              https://unifi.local). Must be reachable from the Elastic Agent host.
+            default: https://192.168.1.1
+            required: true
+          - name: api_key
+            type: text
+            title: UniFi API Key
+            description: >
+              UniFi OS API key with read access to the Network application.
+              Create one in the UDM-Pro UI under Settings → Admins & Users → API Keys.
+            secret: false
+            required: true
+          - name: ssl_verification_mode
+            type: select
+            title: TLS Verification Mode
+            description: >
+              Use "none" to skip TLS verification for self-signed UDM-Pro
+              certificates (recommended for local-only deployments).
+            options:
+              - value: none
+                text: None (skip verification)
+              - value: full
+                text: Full (verify certificate chain and hostname)
+            default: none
+            required: true
+          - name: site
+            type: text
+            title: UniFi Site ID
+            description: UniFi site to collect from. The default site is "default".
+            default: default
+            required: true
+          - name: interval
+            type: text
+            title: Collection Interval
+            description: How often to poll the UniFi API (e.g. 60s, 1m, 5m).
+            default: 60s
+            required: true
+      - type: udp
+        title: UniFi Syslog (UDP)
+        description: >
+          Receive syslog events forwarded from the UDM-Pro.  Enable in the
+          UniFi console under Settings → System → Logging → Remote Syslog.
+owner:
+  github: michael-lykins
+  type: community

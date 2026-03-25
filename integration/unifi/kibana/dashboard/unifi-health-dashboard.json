@@ -1,0 +1,121 @@
+{
+  "attributes": {
+    "description": "Device health \u00b7 WAN/ISP \u00b7 WiFi success rates \u00b7 Client stats \u00b7 SNMP interface throughput",
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": "{\"query\": {\"query\": \"\", \"language\": \"kuery\"}, \"filter\": [{\"meta\": {\"alias\": null, \"disabled\": false, \"key\": \"service.name\", \"negate\": false, \"params\": {\"query\": \"unifi\"}, \"type\": \"phrase\"}, \"query\": {\"match_phrase\": {\"service.name\": \"unifi\"}}}]}"
+    },
+    "optionsJSON": "{\"hidePanelTitles\":false,\"hidePanelBorders\":false,\"useMargins\":true,\"autoApplyFilters\":true,\"syncColors\":false,\"syncCursor\":true,\"syncTooltips\":false}",
+    "panelsJSON": "[{\"type\": \"lens\", \"embeddableConfig\": {\"attributes\": {\"visualizationType\": \"lnsMetric\", \"title\": \"\", \"references\": [], \"state\": {\"datasourceStates\": {\"textBased\": {\"layers\": {\"layer_0\": {\"index\": \"metrics-unifi.snmp-default\", \"query\": {\"esql\": \"FROM metrics-unifi.snmp-default | STATS `Uptime (hrs)` = ROUND(MAX(unifi.device.uptime_sec) / 3600.0, 1)\"}, \"columns\": [{\"columnId\": \"metric_accessor_metric\", \"fieldName\": \"Uptime (hrs)\", \"meta\": {\"type\": \"number\"}}]}}}}, \"internalReferences\": [{\"type\": \"index-pattern\", \"id\": \"metrics-unifi.snmp-default-no_time_field\", \"name\": \"indexpattern-datasource-layer-layer_0\"}], \"visualization\": {\"layerId\": \"layer_0\", \"layerType\": \"data\", \"metricAccessor\": \"metric_accessor_metric\", \"subtitle\": \"\", \"showBar\": false, \"valueFontMode\": \"default\", \"primaryAlign\": \"right\", \"titlesTextAlign\": \"left\"}, \"adHocDataViews\": {\"metrics-unifi.snmp-default-no_time_field\": {\"id\": \"metrics-unifi.snmp-default-no_time_field\", \"title\": \"metrics-unifi.snmp-default\", \"name\": \"metrics-unifi.snmp-default\", \"sourceFilters\": [], \"fieldFormats\": {}, \"runtimeFieldMap\": {}, \"fieldAttrs\": {}, \"allowNoIndex\": false, \"allowHidden\": false}}, \"query\": {\"esql\": \"FROM metrics-unifi.snmp-default | STATS `Uptime (hrs)` = ROUND(MAX(unifi.device.uptime_sec) / 3600.0, 1)\"}, \"filters\": []}, \"version\": 2}}, \"panelIndex\": \"kpi-uptime\", \"gridData\": {\"y\": 1, \"x\": 40, \"w\": 8, \"h\": 5, \"i\": \"kpi-uptime\"}}, {\"type\": \"lens\", \"embeddableConfig\": {\"attributes\": {\"title\": \"\", \"visualizationType\": \"lnsMetric\", \"type\": \"lens\", \"references\": [{\"type\": \"index-pattern\", \"id\": \"unifi-api-dv\", \"name\": \"indexpattern-datasource-layer-layer_0\"}], \"state\": {\"visualization\": {\"layerId\": \"layer_0\", \"layerType\": \"data\", \"metricAccessor\": \"metric_accessor_metric\", \"subtitle\": \"\", \"showBar\": false, \"valueFontMode\": \"default\", \"primaryAlign\": \"right\", \"titlesTextAlign\": \"left\", \"secondaryTrend\": {\"type\": \"none\"}, \"secondaryLabelPosition\": \"before\"}, \"query\": {\"query\": \"observer.type : \\\"udm\\\" \", \"language\": \"kuery\"}, \"filters\": [], \"datasourceStates\": {\"formBased\": {\"layers\": {\"layer_0\": {\"sampling\": 1, \"ignoreGlobalFilters\": false, \"columns\": {\"metric_accessor_metric\": {\"label\": \"WAN Latency (ms)\", \"dataType\": \"number\", \"operationType\": \"last_value\", \"isBucketed\": false, \"sourceField\": \"metrics.unifi.device.uplink.latency_ms\", \"filter\": {\"query\": \"\\\"metrics.unifi.device.uplink.latency_ms\\\": *\", \"language\": \"kuery\"}, \"params\": {\"sortField\": \"@timestamp\"}, \"customLabel\": true}}, \"columnOrder\": [\"metric_accessor_metric\"], \"incompleteColumns\": {}}}}}, \"internalReferences\": [], \"adHocDataViews\": {}}, \"version\": 2}, \"drilldowns\": []}, \"panelIndex\": \"kpi-wan-latency\", \"gridData\": {\"y\": 6, \"x\": 0, \"w\": 12, \"h\": 5, \"i\": \"kpi-wan-latency\"}}, {\"type\": \"lens\", \"embeddableConfig\": {\"attributes\": {\"visualizationType\": \"lnsXY\", \"title\": \"WAN Throughput\", \"state\": {\"datasourceStates\": {\"formBased\": {\"layers\": {\"area_0\": {\"sampling\": 1, \"ignoreGlobalFilters\": false, \"columns\": {\"area_x\": {\"operationType\": \"date_histogram\", \"dataType\": \"date\", \"sourceField\": \"@timestamp\", \"label\": \"\", \"customLabel\": false, \"isBucketed\": true, \"params\": {\"interval\": \"auto\", \"includeEmptyRows\": true, \"dropPartials\": false, \"ignoreTimeRange\": false}}, \"area_y_0\": {\"label\": \"Upload\", \"customLabel\": true, \"dataType\": \"number\", \"operationType\": \"formula\", \"isBucketed\": false, \"params\": {\"formula\": \"average(metrics.unifi.device.uplink.tx_bytes_rate) * 8 / 1000000\", \"isFormulaBroken\": false, \"format\": {\"id\": \"number\", \"params\": {\"decimals\": 2}}}, \"references\": [\"4b2bcd21-ecae-4851-8078-55bfb0a62671\"]}, \"4b2bcd21-ecae-4851-8078-55bfb0a62671\": {\"label\": \"average of metrics.unifi.device.uplink.tx_bytes_rate\", \"dataType\": \"number\", \"operationType\": \"average\", \"sourceField\": \"metrics.unifi.device.uplink.tx_bytes_rate\", \"isBucketed\": false, \"scale\": \"ratio\", \"params\": {\"emptyAsNull\": true}}, \"area_y_1\": {\"label\": \"Download\", \"customLabel\": true, \"dataType\": \"number\", \"operationType\": \"formula\", \"isBucketed\": false, \"params\": {\"formula\": \"average(metrics.unifi.device.uplink.rx_bytes_rate) * 8 / 1000000\", \"isFormulaBroken\": false, \"format\": {\"id\": \"number\", \"params\": {\"decimals\": 2}}}, \"references\": [\"ec56fd17-22cd-4338-a504-1374a389828c\"]}, \"ec56fd17-22cd-4338-a504-1374a389828c\": {\"label\": \"average of metrics.unifi.device.uplink.rx_bytes_rate\", \"dataType\": \"number\", \"operationType\": \"average\", \"sourceField\": \"metrics.unifi.device.uplink.rx_bytes_rate\", \"isBucketed\": false, \"scale\": \"ratio\", \"params\": {\"emptyAsNull\": true}}}, \"columnOrder\": [\"area_x\", \"area_y_0\", \"4b2bcd21-ecae-4851-8078-55bfb0a62671\", \"area_y_1\", \"ec56fd17-22cd-4338-a504-1374a389828c\"], \"indexPatternId\": \"unifi-api-dv\"}, \"ac780820-5bbc-4250-890e-523195c71afa\": {\"indexPatternId\": \"unifi-api-dv\", \"linkToLayers\": [], \"columns\": {\"dc0c186d-d331-4a47-a676-6ff4f1878c36\": {\"label\": \"Latency\", \"dataType\": \"number\", \"operationType\": \"average\", \"isBucketed\": false, \"sourceField\": \"metrics.unifi.device.uplink.latency_ms\", \"params\": {\"emptyAsNull\": true, \"format\": {\"id\": \"number\", \"params\": {\"decimals\": 0, \"suffix\": \" ms\"}}}, \"customLabel\": true}, \"latency_x_ts\": {\"operationType\": \"date_histogram\", \"dataType\": \"date\", \"sourceField\": \"@timestamp\", \"label\": \"\", \"customLabel\": false, \"isBucketed\": true, \"params\": {\"interval\": \"auto\", \"includeEmptyRows\": true, \"dropPartials\": false, \"ignoreTimeRange\": false}}}, \"columnOrder\": [\"latency_x_ts\", \"dc0c186d-d331-4a47-a676-6ff4f1878c36\"], \"sampling\": 1, \"ignoreGlobalFilters\": false, \"incompleteColumns\": {}}}, \"currentIndexPatternId\": \"unifi-metrics-dv\"}}, \"visualization\": {\"preferredSeriesType\": \"area\", \"legend\": {\"isVisible\": true, \"shouldTruncate\": false, \"showSingleSeries\": true, \"position\": \"bottom\", \"layout\": \"list\", \"isInside\": false}, \"yTitle\": \"ms\", \"axisTitlesVisibilitySettings\": {\"x\": true, \"yLeft\": true, \"yRight\": true}, \"yLeftExtent\": {\"mode\": \"full\", \"niceValues\": true}, \"layers\": [{\"layerId\": \"area_0\", \"accessors\": [\"area_y_0\", \"area_y_1\"], \"layerType\": \"data\", \"seriesType\": \"area_stacked\", \"xAccessor\": \"area_x\", \"yConfig\": [{\"forAccessor\": \"area_y_0\", \"axisMode\": \"right\", \"color\": \"#9170b8\"}, {\"forAccessor\": \"area_y_1\", \"axisMode\": \"right\", \"color\": \"#54b399\"}]}, {\"layerId\": \"ac780820-5bbc-4250-890e-523195c71afa\", \"layerType\": \"data\", \"accessors\": [\"dc0c186d-d331-4a47-a676-6ff4f1878c36\"], \"seriesType\": \"line\", \"yConfig\": [{\"forAccessor\": \"dc0c186d-d331-4a47-a676-6ff4f1878c36\", \"axisMode\": \"left\", \"color\": \"#e5c344\", \"lineStyle\": \"dashed\", \"lineWidth\": 1}], \"xAccessor\": \"latency_x_ts\"}], \"labelsOrientation\": {\"x\": 0, \"yLeft\": 0, \"yRight\": 0}, \"yRightTitle\": \"Mbps\", \"yRightExtent\": {\"mode\": \"full\", \"niceValues\": true}, \"tickLabelsVisibilitySettings\": {\"x\": true, \"yLeft\": true, \"yRight\": true}, \"gridlinesVisibilitySettings\": {\"x\": true, \"yLeft\": true, \"yRight\": true}, \"yRightScale\": \"linear\", \"xTitle\": \"Time\", \"pointVisibility\": \"auto\", \"curveType\": \"CURVE_MONOTONE_X\", \"fittingFunction\": \"Linear\"}, \"adHocDataViews\": {}, \"query\": {\"query\": \"observer.type: \\\"udm\\\"\", \"language\": \"kuery\"}, \"filters\": []}, \"references\": [{\"type\": \"index-pattern\", \"id\": \"unifi-api-dv\", \"name\": \"indexpattern-datasource-layer-area_0\"}, {\"type\": \"index-pattern\", \"id\": \"unifi-api-dv\", \"name\": \"indexpattern-datasource-layer-ac780820-5bbc-4250-890e-523195c71afa\"}], \"version\": 2}, \"title\": \"Internet Activity\"}, \"panelIndex\": \"chart-wan-throughput\", \"gridData\": {\"y\": 0, \"x\": 0, \"w\": 47, \"h\": 10, \"i\": \"chart-wan-throughput\", \"sectionId\": \"b4c8edf5-e897-461e-98cb-825300ecd784\"}}]",
+    "pinned_panels": {
+      "panels": {}
+    },
+    "refreshInterval": {
+      "pause": false,
+      "value": 10000
+    },
+    "sections": [
+      {
+        "collapsed": false,
+        "gridData": {
+          "i": "b4c8edf5-e897-461e-98cb-825300ecd784",
+          "y": 0
+        },
+        "title": "Internet Connection Stats"
+      }
+    ],
+    "timeFrom": "now-1h",
+    "timeRestore": true,
+    "timeTo": "now",
+    "title": "UniFi Network Health"
+  },
+  "coreMigrationVersion": "8.8.0",
+  "created_at": "2026-03-24T17:17:23.629Z",
+  "id": "unifi-health-dashboard",
+  "managed": true,
+  "references": [
+    {
+      "id": "unifi-metrics-dv",
+      "name": "kpi-devices:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "kpi-clients:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "kpi-wired:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "kpi-wireless:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "kpi-guests:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-api-dv",
+      "name": "kpi-wan-latency:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "kpi-wifi-assoc:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "kpi-wifi-auth:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "kpi-dhcp:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "kpi-dns:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "chart-cpu-mem:indexpattern-datasource-layer-line_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "table-device-status:indexpattern-datasource-layer-layer_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "chart-cpu-load:indexpattern-datasource-layer-line_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-metrics-dv",
+      "name": "chart-radio-perf:indexpattern-datasource-layer-line_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-api-dv",
+      "name": "chart-wan-throughput:indexpattern-datasource-layer-area_0",
+      "type": "index-pattern"
+    },
+    {
+      "id": "unifi-api-dv",
+      "name": "chart-wan-throughput:indexpattern-datasource-layer-ac780820-5bbc-4250-890e-523195c71afa",
+      "type": "index-pattern"
+    }
+  ],
+  "type": "dashboard",
+  "typeMigrationVersion": "10.3.0",
+  "updated_at": "2026-03-24T17:17:24.156Z",
+  "version": "WzI5OTAsMV0="
+}
