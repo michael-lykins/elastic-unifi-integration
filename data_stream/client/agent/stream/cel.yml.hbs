@@ -1,0 +1,63 @@
+interval: {{interval}}
+program: |
+  request("GET",
+    state.url + "/proxy/network/api/s/{{site}}/stat/sta"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    {
+      "events": bytes(resp.Body).decode_json().data.map(c, {
+        "client": {
+          "mac":      has(c.mac)      ? string(c.mac)      : "",
+          "hostname": has(c.hostname) ? string(c.hostname) : has(c.name) ? string(c.name) : "",
+          "ip":       has(c.ip)       ? string(c.ip)       : "",
+          "oui":      has(c.oui)      ? string(c.oui)      : ""
+        },
+        "host": {
+          "name": has(c.hostname) ? string(c.hostname) : has(c.name) ? string(c.name) : (has(c.mac) ? string(c.mac) : "")
+        },
+        "metrics": {
+          "unifi": {
+            "client": {
+              "is_wired":      has(c.is_wired)    ? c.is_wired              : false,
+              "network":       has(c.network)     ? string(c.network)       : "",
+              "vlan":          has(c.vlan)        ? int(c.vlan)             : 0,
+              "tx_bytes":      has(c.tx_bytes)    ? int(c.tx_bytes)         : 0,
+              "rx_bytes":      has(c.rx_bytes)    ? int(c.rx_bytes)         : 0,
+              "tx_bytes_rate": "tx_bytes-r" in c  ? double(c["tx_bytes-r"]) : 0.0,
+              "rx_bytes_rate": "rx_bytes-r" in c  ? double(c["rx_bytes-r"]) : 0.0,
+              "uptime_sec":    has(c.uptime)      ? int(c.uptime)           : 0,
+              "satisfaction":  has(c.satisfaction)? int(c.satisfaction)     : 0,
+              "wifi": !has(c.essid) ? {} : {
+                "ssid":         string(c.essid),
+                "ap_mac":       has(c.ap_mac)  ? string(c.ap_mac)  : "",
+                "signal_dbm":   has(c.signal)  ? int(c.signal)     : 0,
+                "rssi":         has(c.rssi)    ? int(c.rssi)       : 0,
+                "tx_rate_kbps": has(c.tx_rate) ? int(c.tx_rate)   : 0,
+                "rx_rate_kbps": has(c.rx_rate) ? int(c.rx_rate)   : 0,
+                "radio":        has(c.radio)   ? string(c.radio)   : "",
+                "channel":      has(c.channel) ? int(c.channel)   : 0
+              }
+            }
+          }
+        },
+        "event":   {"dataset": "unifi.client", "module": "unifi"},
+        "service": {"name": "unifi"}
+      })
+    }
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-client
+  - forwarded

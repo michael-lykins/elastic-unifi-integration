@@ -1,0 +1,9 @@
+title: UniFi IPS Events
+type: logs
+streams:
+  - input: cel
+    title: UniFi IPS/IDS Events
+    description: >
+      Intrusion Prevention System (IPS/IDS) threat events from UniFi Threat Management.
+      Includes signature matches, threat categories, severity, and source/destination details.
+    template_path: cel.yml.hbs

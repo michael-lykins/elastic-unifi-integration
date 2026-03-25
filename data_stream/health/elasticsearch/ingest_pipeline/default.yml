@@ -1,0 +1,31 @@
+---
+description: Pipeline for UniFi network health metrics
+processors:
+  - set:
+      field: ecs.version
+      value: "8.11.0"
+  - set:
+      field: event.kind
+      value: metric
+  - set:
+      field: event.type
+      value: info
+  - remove:
+      field: metrics.unifi.health.wan_ip
+      if: "ctx?.metrics?.unifi?.health?.wan_ip == ''"
+      ignore_missing: true
+  - convert:
+      field: metrics.unifi.health.wan_ip
+      type: ip
+      ignore_missing: true
+      ignore_failure: true
+on_failure:
+  - append:
+      field: error.message
+      value: >-
+        Processor {{ _ingest.on_failure_processor_type }} (tag:
+        {{ _ingest.on_failure_processor_tag }}) failed with message:
+        {{ _ingest.on_failure_message }}
+  - set:
+      field: event.kind
+      value: pipeline_error

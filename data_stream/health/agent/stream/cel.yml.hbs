@@ -1,0 +1,46 @@
+interval: {{interval}}
+program: |
+  request("GET",
+    state.url + "/proxy/network/api/s/{{site}}/stat/health"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    {
+      "events": bytes(resp.Body).decode_json().data.map(h, {
+        "metrics": {
+          "unifi": {
+            "health": {
+              "subsystem":    has(h.subsystem)   ? string(h.subsystem)    : "",
+              "status":       has(h.status)      ? string(h.status)       : "",
+              "num_sta":      has(h.num_sta)     ? int(h.num_sta)         : 0,
+              "num_adopted":  has(h.num_adopted) ? int(h.num_adopted)     : 0,
+              "num_gw":       has(h.num_gw)      ? int(h.num_gw)          : 0,
+              "num_sw":       has(h.num_sw)      ? int(h.num_sw)          : 0,
+              "num_ap":       has(h.num_ap)      ? int(h.num_ap)          : 0,
+              "rx_bytes_rate": "rx_bytes-r" in h ? double(h["rx_bytes-r"]) : 0.0,
+              "tx_bytes_rate": "tx_bytes-r" in h ? double(h["tx_bytes-r"]) : 0.0,
+              "latency_ms":   has(h.latency)     ? int(h.latency)         : 0,
+              "wan_ip":       has(h.wan_ip)      ? string(h.wan_ip)       : ""
+            }
+          }
+        },
+        "event":   {"dataset": "unifi.health", "module": "unifi"},
+        "service": {"name": "unifi"}
+      })
+    }
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-health
+  - forwarded

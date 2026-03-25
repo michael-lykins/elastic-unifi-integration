@@ -1,0 +1,22 @@
+title: UniFi NetConsole
+type: logs
+streams:
+  - input: udp
+    title: UniFi NetConsole (UDP)
+    description: >
+      Raw kernel/driver debug messages broadcast by UniFi devices via the
+      proprietary NetConsole protocol (UDP port 10001 by default).
+    template_path: udp.yml.hbs
+    vars:
+      - name: listen_address
+        type: text
+        title: Listen Address
+        description: IP address the Elastic Agent should bind to for NetConsole UDP.
+        default: "0.0.0.0"
+        required: true
+      - name: listen_port
+        type: integer
+        title: Listen Port
+        description: UDP port to receive NetConsole messages on (default 10001).
+        default: 10001
+        required: true

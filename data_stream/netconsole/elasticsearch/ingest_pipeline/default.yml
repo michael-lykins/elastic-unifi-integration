@@ -1,0 +1,63 @@
+---
+description: Pipeline for UniFi NetConsole raw UDP messages.
+processors:
+  - set:
+      tag: set_ecs_version
+      field: ecs.version
+      value: "8.11.0"
+
+  - set:
+      tag: set_event_module
+      field: event.module
+      value: unifi
+
+  - set:
+      tag: set_event_kind
+      field: event.kind
+      value: event
+
+  - set:
+      tag: set_event_category
+      field: event.category
+      value: host
+
+  - set:
+      tag: set_service_name
+      field: service.name
+      value: unifi
+
+  # NetConsole format: "TIMESTAMP HOSTNAME SUBSYSTEM: message"
+  - grok:
+      tag: grok_netconsole
+      field: message
+      patterns:
+        - "%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} %{WORD:process.name}: %{GREEDYDATA:message}"
+        - "%{HOSTNAME:host.name} %{WORD:process.name}: %{GREEDYDATA:message}"
+      ignore_failure: true
+
+  - date:
+      tag: parse_timestamp
+      field: _tmp.timestamp
+      formats:
+        - "MMM  d HH:mm:ss"
+        - "MMM dd HH:mm:ss"
+        - "ISO8601"
+      timezone: UTC
+      target_field: "@timestamp"
+      ignore_failure: true
+
+  - remove:
+      tag: remove_tmp
+      field: _tmp
+      ignore_missing: true
+
+on_failure:
+  - append:
+      field: error.message
+      value: >-
+        Processor {{ _ingest.on_failure_processor_type }} (tag:
+        {{ _ingest.on_failure_processor_tag }}) failed with message:
+        {{ _ingest.on_failure_message }}
+  - set:
+      field: event.kind
+      value: pipeline_error

@@ -1,0 +1,9 @@
+title: UniFi Device Metrics
+type: metrics
+streams:
+  - input: cel
+    title: UniFi Device Metrics
+    description: >
+      Per-device metrics collected from the UniFi Network Local REST API.
+      Includes device health, uplink stats, WAN latency, and speedtest results.
+    template_path: cel.yml.hbs

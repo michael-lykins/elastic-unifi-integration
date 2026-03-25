@@ -1,0 +1,31 @@
+- name: metrics.unifi.rogue_ap.bssid
+  type: keyword
+  description: BSSID (MAC address) of the neighboring AP.
+
+- name: metrics.unifi.rogue_ap.ssid
+  type: keyword
+  description: SSID broadcast by the neighboring AP.
+
+- name: metrics.unifi.rogue_ap.channel
+  type: integer
+  description: Wi-Fi channel the neighboring AP is operating on.
+
+- name: metrics.unifi.rogue_ap.rssi
+  type: integer
+  description: Received signal strength of the neighboring AP.
+
+- name: metrics.unifi.rogue_ap.security
+  type: keyword
+  description: Security type (open, wep, wpapsk, wpa2psk, etc.).
+
+- name: metrics.unifi.rogue_ap.radio_type
+  type: keyword
+  description: Radio type (ng=2.4GHz, na=5GHz).
+
+- name: metrics.unifi.rogue_ap.ap_mac
+  type: keyword
+  description: MAC of the UniFi AP that detected this neighboring AP.
+
+- name: metrics.unifi.rogue_ap.is_adhoc
+  type: boolean
+  description: Whether the detected network is an ad-hoc network.

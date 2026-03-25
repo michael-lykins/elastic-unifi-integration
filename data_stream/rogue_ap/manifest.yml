@@ -1,0 +1,10 @@
+title: UniFi Neighboring APs
+type: metrics
+streams:
+  - input: cel
+    title: UniFi Neighboring / Rogue APs
+    description: >
+      Neighboring and rogue access points detected by UniFi APs via passive RF
+      scanning. Useful for RF environment analysis, rogue AP detection, and
+      channel planning.
+    template_path: cel.yml.hbs

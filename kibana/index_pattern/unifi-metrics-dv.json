@@ -1,0 +1,22 @@
+{
+  "attributes": {
+    "allowHidden": false,
+    "fieldAttrs": "{\"metrics.unifi.device.uplink.latency_ms\":{\"count\":1}}",
+    "fieldFormatMap": "{}",
+    "fields": "[]",
+    "name": "UniFi Metrics",
+    "runtimeFieldMap": "{}",
+    "sourceFilters": "[]",
+    "timeFieldName": "@timestamp",
+    "title": "metrics-generic.otel-default"
+  },
+  "coreMigrationVersion": "8.8.0",
+  "created_at": "2026-03-24T15:32:39.574Z",
+  "id": "unifi-metrics-dv",
+  "managed": false,
+  "references": [],
+  "type": "index-pattern",
+  "typeMigrationVersion": "7.11.0",
+  "updated_at": "2026-03-24T15:32:39.574Z",
+  "version": "WzI1MDMsMV0="
+}

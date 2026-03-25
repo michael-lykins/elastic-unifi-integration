@@ -1,0 +1,9 @@
+title: UniFi Alarms
+type: logs
+streams:
+  - input: cel
+    title: UniFi Alarms
+    description: >
+      Active alarms from the UniFi Network. Covers connectivity issues,
+      device failures, IDS/IPS alerts, and other network events requiring attention.
+    template_path: cel.yml.hbs

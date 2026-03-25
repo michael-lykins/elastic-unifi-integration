@@ -1,0 +1,47 @@
+interval: {{interval}}
+program: |
+  request("POST",
+    state.url + "/proxy/network/api/s/{{site}}/stat/sitedpi"
+  ).with({
+    "Header": {
+      "X-API-KEY":    ["{{api_key}}"],
+      "Content-Type": ["application/json"],
+      "Accept":       ["application/json"]
+    },
+    "Body": bytes("{\"type\":\"by_app\"}")
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    bytes(resp.Body).decode_json().data.filter(
+      d, (has(d.rx_bytes) && int(d.rx_bytes) > 0) || (has(d.tx_bytes) && int(d.tx_bytes) > 0)
+    ).as(rows,
+      {
+        "events": rows.map(d, {
+          "metrics": {
+            "unifi": {
+              "dpi": {
+                "app":      has(d.app)      ? string(d.app)      : "",
+                "cat":      has(d.cat)      ? string(d.cat)      : "",
+                "tx_bytes": has(d.tx_bytes) ? int(d.tx_bytes)    : 0,
+                "rx_bytes": has(d.rx_bytes) ? int(d.rx_bytes)    : 0,
+                "clients":  has(d.clients)  ? int(d.clients)     : 0
+              }
+            }
+          },
+          "event":   {"dataset": "unifi.dpi", "module": "unifi"},
+          "service": {"name": "unifi"}
+        }),
+        "want_more": false
+      }
+    )
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-dpi
+  - forwarded

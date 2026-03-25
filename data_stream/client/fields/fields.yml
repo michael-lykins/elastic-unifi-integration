@@ -1,0 +1,75 @@
+- name: client.hostname
+  type: keyword
+  description: Hostname of the client device.
+
+- name: client.oui
+  type: keyword
+  description: OUI (manufacturer) of the client device.
+
+- name: metrics.unifi.client.is_wired
+  type: boolean
+  description: Whether the client is connected via Ethernet.
+
+- name: metrics.unifi.client.network
+  type: keyword
+  description: Network/SSID name the client is on.
+
+- name: metrics.unifi.client.vlan
+  type: integer
+  description: VLAN ID the client is assigned to.
+
+- name: metrics.unifi.client.tx_bytes
+  type: long
+  description: Total bytes transmitted by client since association.
+
+- name: metrics.unifi.client.rx_bytes
+  type: long
+  description: Total bytes received by client since association.
+
+- name: metrics.unifi.client.tx_bytes_rate
+  type: double
+  description: Current transmit throughput in bytes/sec.
+
+- name: metrics.unifi.client.rx_bytes_rate
+  type: double
+  description: Current receive throughput in bytes/sec.
+
+- name: metrics.unifi.client.uptime_sec
+  type: long
+  description: Client session uptime in seconds.
+
+- name: metrics.unifi.client.satisfaction
+  type: integer
+  description: Client experience score 0-100.
+
+- name: metrics.unifi.client.wifi.ssid
+  type: keyword
+  description: SSID the wireless client is associated with.
+
+- name: metrics.unifi.client.wifi.ap_mac
+  type: keyword
+  description: MAC address of the access point serving this client.
+
+- name: metrics.unifi.client.wifi.signal_dbm
+  type: integer
+  description: RSSI signal strength in dBm.
+
+- name: metrics.unifi.client.wifi.rssi
+  type: integer
+  description: RSSI value (positive integer representation).
+
+- name: metrics.unifi.client.wifi.tx_rate_kbps
+  type: long
+  description: Transmit rate negotiated with AP in Kbps.
+
+- name: metrics.unifi.client.wifi.rx_rate_kbps
+  type: long
+  description: Receive rate negotiated with AP in Kbps.
+
+- name: metrics.unifi.client.wifi.radio
+  type: keyword
+  description: Radio band used (ng=2.4GHz, na=5GHz, 6e=6GHz).
+
+- name: metrics.unifi.client.wifi.channel
+  type: integer
+  description: Wi-Fi channel number in use.

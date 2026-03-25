@@ -1,0 +1,9 @@
+title: UniFi Client Metrics
+type: metrics
+streams:
+  - input: cel
+    title: UniFi Client Metrics
+    description: >
+      Per-connected-client metrics from the UniFi Network Local REST API.
+      Includes identity, wireless signal, throughput, satisfaction, and VLAN placement.
+    template_path: cel.yml.hbs

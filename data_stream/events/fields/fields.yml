@@ -1,0 +1,27 @@
+- name: client.ip
+  type: ip
+  description: IP address of the network client (DHCP/WiFi events).
+
+- name: client.mac
+  type: keyword
+  description: MAC address of the network client.
+
+- name: client.hostname
+  type: keyword
+  description: Hostname of the network client (from DHCP).
+
+- name: rule.name
+  type: keyword
+  description: Name of the firewall rule that generated this event.
+
+- name: network.interface
+  type: keyword
+  description: Network interface associated with a DHCP event.
+
+- name: network.ingress.interface
+  type: keyword
+  description: Ingress network interface name from iptables firewall events.
+
+- name: network.egress.interface
+  type: keyword
+  description: Egress network interface name from iptables firewall events.

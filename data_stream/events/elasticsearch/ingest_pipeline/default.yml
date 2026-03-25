@@ -1,0 +1,363 @@
+---
+description: >
+  Pipeline for UniFi syslog events. Parses RFC3164 syslog format from
+  the UDM-Pro and classifies events by process name (hostapd, dnsmasq,
+  kernel/iptables, sshd, sudo, mcad, ubnt-util, device-forwarded).
+processors:
+  - set:
+      tag: set_ecs_version
+      field: ecs.version
+      value: "8.11.0"
+
+  - set:
+      tag: set_event_module
+      field: event.module
+      value: unifi
+
+  - set:
+      tag: set_service_name
+      field: service.name
+      value: unifi
+
+  # ── Parse RFC3164 syslog header ──────────────────────────────────────────────
+  - grok:
+      tag: grok_syslog_header
+      field: message
+      patterns:
+        - "^<%{NONNEGINT:log.syslog.priority}>%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} %{PROG:process.name}(?:\\[%{POSINT:process.pid}\\])?: %{GREEDYDATA:message}"
+        - "^%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} %{PROG:process.name}(?:\\[%{POSINT:process.pid}\\])?: %{GREEDYDATA:message}"
+      ignore_failure: true
+
+  # ── UDM-Pro firmware 5.x double-hostname format ──────────────────────────────
+  # Firmware 5.x prepends the hostname twice:
+  #   <PRI>TIMESTAMP HOST HOST PROG[PID]: MSG
+  # The first grok fails because PROG is followed by a space (second HOST token)
+  # not the expected colon.  When process.name is still null we re-try with a
+  # pattern that explicitly consumes BOTH hostname tokens plus the full header.
+  - grok:
+      tag: grok_double_hostname
+      field: message
+      if: ctx.process?.name == null
+      patterns:
+        - "^(?:<%{NONNEGINT:log.syslog.priority}>)?%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} %{HOSTNAME} %{PROG:process.name}(?:\\[%{POSINT:process.pid}\\])?: %{GREEDYDATA:message}"
+      ignore_failure: true
+
+  # ── iptables NFLOG bracket-format firewall messages ──────────────────────────
+  # UDM-Pro iptables LOG targets emit lines without a standard PROG token:
+  #   <13>Mar 24 16:06:48 UDM-Pro [WAN_LOCAL-A-10000] DESCR="..." IN=eth8 SRC=...
+  # The PROG grok above fails on these (brackets are not valid PROG chars), so
+  # process.name is null and the kernel branch below never fires.  Handle here.
+  - grok:
+      tag: grok_iptables_bracket
+      field: message
+      if: "ctx.process?.name == null && ctx.message != null && ctx.message.contains('IN=') && ctx.message.contains('SRC=')"
+      patterns:
+        - "(?:<%{NONNEGINT}>)?%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} \\[%{DATA:rule.name}\\](?:\\s+DESCR=\"%{DATA:rule.description}\")?\\s+IN=%{DATA:network.ingress.interface}\\s+OUT=%{DATA:network.egress.interface}\\s+(?:MAC=%{DATA:source.mac}\\s+)?SRC=%{IP:source.ip}\\s+DST=%{IP:destination.ip}(?:.*?PROTO=%{WORD:network.transport})?(?:.*?\\bSPT=%{INT:source.port})?(?:.*?\\bDPT=%{INT:destination.port})?"
+      ignore_failure: true
+
+  - set:
+      tag: set_category_iptables_bracket
+      field: event.category
+      value: firewall
+      if: "ctx.process?.name == null && ctx.source?.ip != null && ctx.rule?.name != null"
+
+  - script:
+      tag: set_action_iptables_bracket
+      lang: painless
+      if: "ctx.event?.category == 'firewall' && ctx.event?.action == null && ctx.rule?.name != null"
+      source: |
+        String ruleName = ctx.rule.name;
+        if (ruleName.contains('-D-') || ruleName.endsWith('-D')) {
+          ctx.event.action = 'firewall_block';
+        } else {
+          ctx.event.action = 'firewall_accept';
+        }
+
+  # ── Device-forwarded syslog (UniFi APs and switches) ─────────────────────────
+  # When a UniFi device (AP, switch) forwards its own syslog through the UDM-Pro,
+  # the PROG field contains "MAC,model" (e.g. "d8b3705f6d6e,U6-IW-6.8.2+15592").
+  # Extract the device MAC (colon-separated), store the model, then re-parse the
+  # embedded PROG[PID]: MSG in the message body.
+  - script:
+      tag: parse_device_mac_model
+      lang: painless
+      if: "ctx.process?.name != null && ctx.process.name.contains(',')"
+      source: |
+        String proc = ctx.process.name;
+        int comma = proc.indexOf(',');
+        if (comma > 0) {
+          String macRaw = proc.substring(0, comma).toLowerCase();
+          if (macRaw.length() == 12) {
+            StringBuilder mac = new StringBuilder();
+            for (int i = 0; i < 12; i += 2) {
+              if (i > 0) mac.append(':');
+              mac.append(macRaw.substring(i, i + 2));
+            }
+            if (ctx.observer == null) { ctx.observer = new HashMap(); }
+            ctx.observer.mac = mac.toString();
+          }
+          if (ctx.observer == null) { ctx.observer = new HashMap(); }
+          ctx.observer.product = proc.substring(comma + 1);
+          // Clear the MAC,model value so re-parse sets the real process name
+          ctx.process.name = null;
+        }
+
+  - grok:
+      tag: grok_device_forwarded_prog
+      field: message
+      if: ctx.process?.name == null && ctx.observer?.mac != null
+      patterns:
+        - "^%{PROG:process.name}(?:\\[%{POSINT:process.pid}\\])?: %{GREEDYDATA:message}"
+      ignore_failure: true
+
+  # ── Timestamp ─────────────────────────────────────────────────────────────────
+  # BSD-style syslog timestamps (MMM dd HH:mm:ss) carry no timezone info.
+  # The UDM-Pro emits timestamps in its local timezone (America/Chicago).
+  # ISO8601 timestamps include an explicit offset, so the timezone parameter
+  # is ignored for those — only the BSD formats need this correction.
+  - date:
+      tag: parse_timestamp
+      field: _tmp.timestamp
+      formats:
+        - "MMM  d HH:mm:ss"
+        - "MMM dd HH:mm:ss"
+        - "ISO8601"
+      timezone: America/Chicago
+      target_field: "@timestamp"
+      ignore_failure: true
+
+  # ── Strip trailing newline/whitespace ─────────────────────────────────────────
+  - gsub:
+      tag: strip_newline
+      field: message
+      pattern: "[\\n\\r\\s]+$"
+      replacement: ""
+      ignore_missing: true
+
+  # ── Classify by process name ──────────────────────────────────────────────────
+
+  # WiFi — hostapd / wpa_supplicant
+  - set:
+      tag: set_category_wifi
+      field: event.category
+      value: network
+      if: "ctx.process?.name != null && (ctx.process.name == 'hostapd' || ctx.process.name.startsWith('wpa_supplicant'))"
+
+  - grok:
+      tag: grok_wifi_assoc
+      field: message
+      if: "ctx.event?.category == 'network' && ctx.message.contains('associated')"
+      patterns:
+        - "STA %{MAC:client.mac} .* associated"
+      ignore_failure: true
+
+  - set:
+      tag: set_action_wifi_assoc
+      field: event.action
+      value: wifi_associated
+      if: "ctx.event?.category == 'network' && ctx.message.contains('associated') && !ctx.message.contains('disassociated')"
+
+  - set:
+      tag: set_action_wifi_disassoc
+      field: event.action
+      value: wifi_disassociated
+      if: "ctx.event?.category == 'network' && ctx.message.contains('disassociated')"
+
+  - set:
+      tag: set_action_wifi_auth_fail
+      field: event.action
+      value: wifi_auth_failure
+      if: "ctx.event?.category == 'network' && ctx.message != null && (ctx.message.contains('FAIL') || ctx.message.toLowerCase().contains('auth') && ctx.message.toLowerCase().contains('fail'))"
+
+  # DHCP — dnsmasq
+  - set:
+      tag: set_category_dhcp
+      field: event.category
+      value: network
+      if: "ctx.process?.name != null && (ctx.process.name == 'dnsmasq' || ctx.process.name.startsWith('dnsmasq-dhcp'))"
+
+  - grok:
+      tag: grok_dhcp_ack
+      field: message
+      if: "ctx.process?.name != null && (ctx.process.name == 'dnsmasq' || ctx.process.name.startsWith('dnsmasq-dhcp')) && ctx.message.contains('DHCPACK')"
+      patterns:
+        - "DHCPACK\\(%{DATA:network.interface}\\) %{IP:client.ip} %{MAC:client.mac}(?:%{SPACE}%{HOSTNAME:client.hostname})?"
+      ignore_failure: true
+
+  - set:
+      tag: set_action_dhcp_ack
+      field: event.action
+      value: dhcp_ack
+      if: "ctx.process?.name != null && (ctx.process.name == 'dnsmasq' || ctx.process.name.startsWith('dnsmasq-dhcp')) && ctx.message.contains('DHCPACK')"
+
+  - set:
+      tag: set_action_dhcp_discover
+      field: event.action
+      value: dhcp_discover
+      if: "ctx.process?.name != null && (ctx.process.name == 'dnsmasq' || ctx.process.name.startsWith('dnsmasq-dhcp')) && ctx.message.contains('DHCPDISCOVER')"
+
+  - set:
+      tag: set_action_dhcp_release
+      field: event.action
+      value: dhcp_release
+      if: "ctx.process?.name != null && (ctx.process.name == 'dnsmasq' || ctx.process.name.startsWith('dnsmasq-dhcp')) && ctx.message.contains('DHCPRELEASE')"
+
+  # Firewall — kernel iptables
+  - set:
+      tag: set_category_firewall
+      field: event.category
+      value: network
+      if: "ctx.process?.name == 'kernel'"
+
+  - set:
+      tag: set_event_type_firewall
+      field: event.type
+      value: denied
+      if: "ctx.process?.name == 'kernel' && ctx.message.contains('IN=')"
+
+  - grok:
+      tag: grok_iptables
+      field: message
+      if: "ctx.process?.name == 'kernel' && ctx.message.contains('IN=')"
+      patterns:
+        - "%{DATA:rule.name}IN=%{DATA:network.ingress.interface} OUT=%{DATA:network.egress.interface} (?:MAC=%{DATA:source.mac} )?SRC=%{IP:source.ip} DST=%{IP:destination.ip}(?:%{SPACE}LEN=%{INT:network.bytes})?(?:%{SPACE}.* PROTO=%{WORD:network.transport})?(?:%{SPACE}SPT=%{INT:source.port})?(?:%{SPACE}DPT=%{INT:destination.port})?"
+      ignore_failure: true
+
+  - set:
+      tag: set_action_firewall_block
+      field: event.action
+      value: firewall_block
+      if: "ctx.process?.name == 'kernel' && ctx.message.contains('IN=')"
+
+  # SSH — sshd
+  # High-volume on UDM-Pro due to internet-facing SSH.  Classify auth events
+  # and extract the remote IP/port/username for security visibility.
+  - set:
+      tag: set_category_sshd
+      field: event.category
+      value: authentication
+      if: "ctx.process?.name == 'sshd'"
+
+  - grok:
+      tag: grok_sshd_invalid_user
+      field: message
+      if: "ctx.process?.name == 'sshd' && ctx.message != null && ctx.message.contains('Invalid user')"
+      patterns:
+        - "Invalid user %{USERNAME:user.name} from %{IP:source.ip} port %{INT:source.port}"
+      ignore_failure: true
+
+  - grok:
+      tag: grok_sshd_failed_password
+      field: message
+      if: "ctx.process?.name == 'sshd' && ctx.message != null && ctx.message.contains('Failed password')"
+      patterns:
+        - "Failed password for (?:invalid user )?%{USERNAME:user.name} from %{IP:source.ip} port %{INT:source.port}"
+      ignore_failure: true
+
+  - grok:
+      tag: grok_sshd_accepted
+      field: message
+      if: "ctx.process?.name == 'sshd' && ctx.message != null && ctx.message.contains('Accepted')"
+      patterns:
+        - "Accepted %{WORD:user.auth_method} for %{USERNAME:user.name} from %{IP:source.ip} port %{INT:source.port}"
+      ignore_failure: true
+
+  - grok:
+      tag: grok_sshd_disconnect
+      field: message
+      if: "ctx.process?.name == 'sshd' && ctx.message != null && (ctx.message.contains('Received disconnect') || ctx.message.contains('Disconnected from'))"
+      patterns:
+        - "(?:Received disconnect from|Disconnected from(?: invalid user %{USERNAME:user.name})?) %{IP:source.ip} port %{INT:source.port}"
+      ignore_failure: true
+
+  - script:
+      tag: set_action_sshd
+      lang: painless
+      if: "ctx.process?.name == 'sshd' && ctx.message != null"
+      source: |
+        String msg = ctx.message;
+        if (msg.contains('Invalid user') || msg.contains('Failed password') || msg.contains('authentication failure')) {
+          ctx.event.action = 'ssh_login_failed';
+          ctx.event.outcome = 'failure';
+        } else if (msg.contains('Accepted')) {
+          ctx.event.action = 'ssh_login_success';
+          ctx.event.outcome = 'success';
+        } else if (msg.contains('Received disconnect') || msg.contains('Disconnected from')) {
+          ctx.event.action = 'ssh_disconnected';
+        } else if (msg.contains('Connection closed')) {
+          ctx.event.action = 'ssh_connection_closed';
+        }
+
+  # sudo — privilege escalation
+  - set:
+      tag: set_category_sudo
+      field: event.category
+      value: process
+      if: "ctx.process?.name == 'sudo'"
+
+  - grok:
+      tag: grok_sudo
+      field: message
+      if: "ctx.process?.name == 'sudo' && ctx.message != null"
+      patterns:
+        - "%{USERNAME:user.name}\\s*:\\s*(?:TTY=%{DATA}\\s+;\\s+)?PWD=%{DATA}\\s+;\\s+USER=%{USERNAME:user.target.name}\\s+;\\s+COMMAND=%{GREEDYDATA:process.command_line}"
+      ignore_failure: true
+
+  - set:
+      tag: set_action_sudo
+      field: event.action
+      value: sudo_command
+      if: "ctx.process?.name == 'sudo'"
+
+  # System events — mcad, ubnt-util, others
+  - set:
+      tag: set_category_system
+      field: event.category
+      value: host
+      if: "ctx.event?.category == null"
+
+  # ── Type conversion for numeric fields ──────────────────────────────────────
+  - convert:
+      tag: convert_network_bytes
+      field: network.bytes
+      type: long
+      ignore_missing: true
+      ignore_failure: true
+
+  - convert:
+      tag: convert_source_port
+      field: source.port
+      type: integer
+      ignore_missing: true
+      ignore_failure: true
+
+  - convert:
+      tag: convert_destination_port
+      field: destination.port
+      type: integer
+      ignore_missing: true
+      ignore_failure: true
+
+  - convert:
+      tag: convert_process_pid
+      field: process.pid
+      type: long
+      ignore_missing: true
+      ignore_failure: true
+
+  # ── Cleanup ─────────────────────────────────────────────────────────────────
+  - remove:
+      tag: remove_tmp
+      field: _tmp
+      ignore_missing: true
+
+on_failure:
+  - append:
+      field: error.message
+      value: >-
+        Processor {{ _ingest.on_failure_processor_type }} (tag:
+        {{ _ingest.on_failure_processor_tag }}) failed with message:
+        {{ _ingest.on_failure_message }}
+  - set:
+      field: event.kind
+      value: pipeline_error

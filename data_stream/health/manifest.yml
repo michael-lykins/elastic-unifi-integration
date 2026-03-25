@@ -1,0 +1,9 @@
+title: UniFi Network Health
+type: metrics
+streams:
+  - input: cel
+    title: UniFi Network Health
+    description: >
+      Per-subsystem network health from the UniFi site health endpoint.
+      Covers WAN, LAN, WLAN subsystem status, client counts, and throughput rates.
+    template_path: cel.yml.hbs

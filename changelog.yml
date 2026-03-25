@@ -1,0 +1,50 @@
+- version: "0.6.4"
+  changes:
+    - description: Add DPI app and category name resolution. Ingest pipeline now maps numeric UniFi DPI IDs to human-readable names (app_name, cat_name fields) using the complete 2,120-application and 35-category lookup table extracted directly from the UDM-Pro firmware (/usr/share/dpi/tdts/rule.json).
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/9
+- version: "0.6.3"
+  changes:
+    - description: Fix DPI data stream — filter out empty records returned by the UniFi sitedpi API when no traffic has been classified (API returns [{}]). Clarify that app and cat fields are numeric IDs, not human-readable names.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/9
+- version: "0.6.2"
+  changes:
+    - description: Fix @timestamp timezone — BSD-style syslog timestamps from the UDM-Pro (America/Chicago) were being stored as UTC, placing all events 5 hours in the past. Date processor now uses America/Chicago so CDT/CST timestamps are correctly converted to UTC. ISO8601 timestamps (which carry an explicit offset) are unaffected.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/8
+- version: "0.6.1"
+  changes:
+    - description: Fix double-hostname syslog parsing so sshd, sudo, earlyoom, and other UDM-Pro system processes are correctly identified. Add authentication classification for sshd (invalid user, failed password, accepted, disconnect with source IP extraction). Add process classification for sudo. Handle device-forwarded logs from UniFi APs and switches (MAC,model process name → observer.mac + embedded PROG re-parse).
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/7
+- version: "0.6.0"
+  changes:
+    - description: Add firewall_policy data stream collecting firewall rule configuration (name, action, source/destination zones, ordering index, logging state) from the UniFi Network Integration API v1.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/6
+- version: "0.5.0"
+  changes:
+    - description: Fix iptables NFLOG bracket-format parsing in events pipeline so firewall rule-hit messages correctly populate source.ip, destination.ip, rule.name, and network.transport fields.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/5
+- version: "0.4.0"
+  changes:
+    - description: Add client, health, alarm, ips_event, dpi, and rogue_ap data streams covering all major UniFi Network Local API endpoints.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/4
+- version: "0.3.0"
+  changes:
+    - description: Move UDP host config to top-level (remove udp wrapper) to fix 127.0.0.1:8080 default binding issue.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/3
+- version: "0.2.0"
+  changes:
+    - description: Fix duplicate @timestamp in device metrics; remove conflicting input-level UDP vars so per-stream listen_address/listen_port render correctly.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/2
+- version: "0.1.0"
+  changes:
+    - description: Initial release. Device metrics via UniFi Network API (CEL input) and syslog events via UDP.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/1

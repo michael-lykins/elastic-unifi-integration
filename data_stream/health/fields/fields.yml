@@ -1,0 +1,43 @@
+- name: metrics.unifi.health.subsystem
+  type: keyword
+  description: Network subsystem name (wan, lan, wlan, vpn).
+
+- name: metrics.unifi.health.status
+  type: keyword
+  description: Subsystem health status (ok, warning, error).
+
+- name: metrics.unifi.health.num_sta
+  type: integer
+  description: Number of connected stations/clients.
+
+- name: metrics.unifi.health.num_adopted
+  type: integer
+  description: Number of adopted UniFi devices.
+
+- name: metrics.unifi.health.num_gw
+  type: integer
+  description: Number of gateways.
+
+- name: metrics.unifi.health.num_sw
+  type: integer
+  description: Number of switches.
+
+- name: metrics.unifi.health.num_ap
+  type: integer
+  description: Number of access points.
+
+- name: metrics.unifi.health.rx_bytes_rate
+  type: double
+  description: Current receive throughput for subsystem in bytes/sec.
+
+- name: metrics.unifi.health.tx_bytes_rate
+  type: double
+  description: Current transmit throughput for subsystem in bytes/sec.
+
+- name: metrics.unifi.health.latency_ms
+  type: integer
+  description: WAN latency in milliseconds (WAN subsystem only).
+
+- name: metrics.unifi.health.wan_ip
+  type: ip
+  description: WAN IP address (WAN subsystem only).

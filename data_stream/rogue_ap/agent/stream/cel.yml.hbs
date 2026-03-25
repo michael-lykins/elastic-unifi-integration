@@ -1,0 +1,43 @@
+interval: {{interval}}
+program: |
+  request("GET",
+    state.url + "/proxy/network/api/s/{{site}}/stat/rogueap"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    {
+      "events": bytes(resp.Body).decode_json().data.map(ap, {
+        "metrics": {
+          "unifi": {
+            "rogue_ap": {
+              "bssid":      has(ap.bssid)      ? string(ap.bssid)      : "",
+              "ssid":       has(ap.ssid)       ? string(ap.ssid)       : "",
+              "channel":    has(ap.channel)    ? int(ap.channel)       : 0,
+              "rssi":       has(ap.rssi)       ? int(ap.rssi)          : 0,
+              "security":   has(ap.security)   ? string(ap.security)   : "",
+              "radio_type": has(ap.radio_type) ? string(ap.radio_type) : "",
+              "ap_mac":     has(ap.ap_mac)     ? string(ap.ap_mac)     : "",
+              "is_adhoc":   has(ap.is_adhoc)   ? ap.is_adhoc            : false
+            }
+          }
+        },
+        "event":   {"dataset": "unifi.rogue_ap", "module": "unifi"},
+        "service": {"name": "unifi"}
+      })
+    }
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-rogue-ap
+  - forwarded

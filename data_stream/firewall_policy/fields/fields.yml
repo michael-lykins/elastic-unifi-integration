@@ -1,0 +1,61 @@
+- name: unifi.firewall_policy.id
+  type: keyword
+  description: Unique policy UUID assigned by UniFi.
+
+- name: unifi.firewall_policy.name
+  type: keyword
+  description: Human-readable policy name (may be empty for auto-generated rules).
+
+- name: unifi.firewall_policy.enabled
+  type: boolean
+  description: Whether this policy is currently active.
+
+- name: unifi.firewall_policy.index
+  type: integer
+  description: >
+    Policy ordering index — lower values are evaluated first.
+    System catch-all rules typically use index 2147483647.
+
+- name: unifi.firewall_policy.action.type
+  type: keyword
+  description: Policy action — ALLOW, BLOCK, or REJECT.
+
+- name: unifi.firewall_policy.action.allow_return_traffic
+  type: boolean
+  description: Whether matching return (established/related) traffic is automatically allowed.
+
+- name: unifi.firewall_policy.source.zone_id
+  type: keyword
+  description: UUID of the source firewall zone.
+
+- name: unifi.firewall_policy.source.zone_name
+  type: keyword
+  description: Human-readable name of the source zone (e.g. Internal, External, Gateway).
+
+- name: unifi.firewall_policy.source.filter_type
+  type: keyword
+  description: Source traffic filter type — ANY, MAC_ADDRESS, or IP_ADDRESS.
+
+- name: unifi.firewall_policy.destination.zone_id
+  type: keyword
+  description: UUID of the destination firewall zone.
+
+- name: unifi.firewall_policy.destination.zone_name
+  type: keyword
+  description: Human-readable name of the destination zone (e.g. Internal, External, Gateway).
+
+- name: unifi.firewall_policy.destination.filter_type
+  type: keyword
+  description: Destination traffic filter type — ANY, MAC_ADDRESS, or IP_ADDRESS.
+
+- name: unifi.firewall_policy.ip_version
+  type: keyword
+  description: IP protocol scope — IPV4_AND_IPV6, IPV4_ONLY, or IPV6_ONLY.
+
+- name: unifi.firewall_policy.logging_enabled
+  type: boolean
+  description: Whether traffic matching this policy generates iptables LOG entries.
+
+- name: unifi.firewall_policy.origin
+  type: keyword
+  description: Policy origin — USER_DEFINED or SYSTEM_DEFINED.

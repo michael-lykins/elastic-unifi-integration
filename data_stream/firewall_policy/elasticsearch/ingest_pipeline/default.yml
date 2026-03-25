@@ -1,0 +1,77 @@
+---
+description: >
+  Pipeline for UniFi firewall policy configuration records collected from
+  the Integration API v1.  Sets ECS metadata and derives event.action from
+  the policy action type.
+processors:
+  - set:
+      tag: set_ecs_version
+      field: ecs.version
+      value: "8.11.0"
+
+  - set:
+      tag: set_event_module
+      field: event.module
+      value: unifi
+
+  - set:
+      tag: set_event_kind
+      field: event.kind
+      value: state
+
+  - set:
+      tag: set_event_category
+      field: event.category
+      value: configuration
+
+  - set:
+      tag: set_service_name
+      field: service.name
+      value: unifi
+
+  # ── Derive event.action from action type ────────────────────────────────────
+  - script:
+      tag: set_event_action
+      lang: painless
+      if: "ctx.unifi?.firewall_policy?.action?.type != null"
+      source: |
+        String t = ctx.unifi.firewall_policy.action.type;
+        if (t == 'ALLOW') {
+          ctx.event.action = 'firewall_accept';
+        } else if (t == 'BLOCK') {
+          ctx.event.action = 'firewall_block';
+        } else if (t == 'REJECT') {
+          ctx.event.action = 'firewall_reject';
+        } else {
+          ctx.event.action = t.toLowerCase();
+        }
+
+  # ── Mark disabled policies ───────────────────────────────────────────────────
+  - set:
+      tag: set_event_type_disabled
+      field: event.type
+      value: info
+      if: "ctx.unifi?.firewall_policy?.enabled == false"
+
+  - set:
+      tag: set_event_type_enabled
+      field: event.type
+      value: allowed
+      if: "ctx.unifi?.firewall_policy?.enabled == true && ctx.unifi?.firewall_policy?.action?.type == 'ALLOW'"
+
+  - set:
+      tag: set_event_type_blocked
+      field: event.type
+      value: denied
+      if: "ctx.unifi?.firewall_policy?.enabled == true && (ctx.unifi?.firewall_policy?.action?.type == 'BLOCK' || ctx.unifi?.firewall_policy?.action?.type == 'REJECT')"
+
+on_failure:
+  - append:
+      field: error.message
+      value: >-
+        Processor {{ _ingest.on_failure_processor_type }} (tag:
+        {{ _ingest.on_failure_processor_tag }}) failed with message:
+        {{ _ingest.on_failure_message }}
+  - set:
+      field: event.kind
+      value: pipeline_error

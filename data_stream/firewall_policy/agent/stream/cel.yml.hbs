@@ -1,0 +1,102 @@
+interval: {{interval}}
+program: |
+  // Each collection interval makes three sequential requests:
+  //   1. GET /sites              → resolve the UDM-Pro site UUID
+  //   2. GET /sites/{id}/firewall/zones    → build zone-name lookup
+  //   3. GET /sites/{id}/firewall/policies → emit one doc per policy rule
+  //
+  // All requests are chained with nested .as() so no cross-interval state is
+  // needed.  A limit of 100 covers typical single-site deployments (usually
+  // fewer than 100 user-defined rules).
+  request("GET",
+    state.url + "/proxy/network/integration/v1/sites"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(sites_resp,
+    sites_resp.StatusCode != 200 ?
+      {"events": [], "want_more": false}
+    :
+    bytes(sites_resp.Body).decode_json().data.filter(
+      x, x.internalReference == "{{site}}"
+    ).as(match,
+      match.size() == 0 ?
+        {"events": [], "want_more": false}
+      :
+      match[0].id.as(site_id,
+        request("GET",
+          state.url + "/proxy/network/integration/v1/sites/" + site_id + "/firewall/zones"
+        ).with({
+          "Header": {
+            "X-API-KEY": ["{{api_key}}"],
+            "Accept":    ["application/json"]
+          }
+        }).do_request().as(zones_resp,
+          zones_resp.StatusCode != 200 ?
+            {"events": [], "want_more": false}
+          :
+          bytes(zones_resp.Body).decode_json().data.map(
+            z, {"id": z.id, "name": z.name}
+          ).as(zones,
+            request("GET",
+              state.url + "/proxy/network/integration/v1/sites/" + site_id +
+              "/firewall/policies?limit=100"
+            ).with({
+              "Header": {
+                "X-API-KEY": ["{{api_key}}"],
+                "Accept":    ["application/json"]
+              }
+            }).do_request().as(pol_resp,
+              pol_resp.StatusCode != 200 ?
+                {"events": [], "want_more": false}
+              :
+              bytes(pol_resp.Body).decode_json().data.map(p,
+                {
+                  "unifi": {
+                    "firewall_policy": {
+                      "id":      p.id,
+                      "name":    has(p.name) ? string(p.name) : "",
+                      "enabled": p.enabled,
+                      "index":   int(p.index),
+                      "action": {
+                        "type":                p.action.type,
+                        "allow_return_traffic": has(p.action.allowReturnTraffic) ? p.action.allowReturnTraffic : false
+                      },
+                      "source": {
+                        "zone_id":     p.source.zoneId,
+                        "zone_name":   zones.filter(z, z.id == p.source.zoneId).as(m,
+                                         m.size() > 0 ? m[0].name : p.source.zoneId),
+                        "filter_type": has(p.source.trafficFilter) ? p.source.trafficFilter.type : "ANY"
+                      },
+                      "destination": {
+                        "zone_id":     p.destination.zoneId,
+                        "zone_name":   zones.filter(z, z.id == p.destination.zoneId).as(m,
+                                         m.size() > 0 ? m[0].name : p.destination.zoneId),
+                        "filter_type": has(p.destination.trafficFilter) ? p.destination.trafficFilter.type : "ANY"
+                      },
+                      "ip_version":      has(p.ipProtocolScope) && has(p.ipProtocolScope.ipVersion) ? string(p.ipProtocolScope.ipVersion) : "",
+                      "logging_enabled": p.loggingEnabled,
+                      "origin":          has(p.metadata) && has(p.metadata.origin) ? string(p.metadata.origin) : ""
+                    }
+                  },
+                  "event":   {"dataset": "unifi.firewall_policy", "module": "unifi"},
+                  "service": {"name": "unifi"}
+                }
+              ).as(events,
+                {"events": events, "want_more": false}
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-firewall-policy
+  - forwarded

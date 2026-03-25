@@ -1,0 +1,80 @@
+interval: {{interval}}
+program: |
+  request("GET",
+    state.url + "/proxy/network/api/s/{{site}}/stat/device"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    {
+      "events": bytes(resp.Body).decode_json().data.map(device, {
+        "device": {
+          "name":       has(device.name)    ? string(device.name)    : "",
+          "model":      has(device.model)   ? string(device.model)   : "",
+          "type":       has(device.type)    ? string(device.type)    : "",
+          "ip":         has(device.ip)      ? string(device.ip)      : "",
+          "mac":        has(device.mac)     ? string(device.mac)     : "",
+          "version":    has(device.version) ? string(device.version) : "",
+          "uptime_sec": has(device.uptime)  ? int(device.uptime)     : 0
+        },
+        "host": {
+          "name": has(device.name) ? string(device.name) : ""
+        },
+        "metrics": {
+          "unifi": {
+            "device": {
+              "state":         has(device.state)            ? int(device.state)                   : 0,
+              "satisfaction":  has(device.satisfaction)     ? int(device.satisfaction)             : 0,
+              "num_clients":   has(device.num_sta)          ? int(device.num_sta)                  : 0,
+              "temperature_c": has(device.general_temperature) ? double(device.general_temperature) : 0.0,
+              "fan_level_pct": has(device.fan_level)        ? int(device.fan_level)               : 0,
+              "poe_power_w":   has(device.total_used_power) ? double(device.total_used_power)     : 0.0,
+              "uplink": !has(device.uplink) ? {} : {
+                "up":            has(device.uplink.up)         ? device.uplink.up                             : false,
+                "speed_mbps":    has(device.uplink.speed)      ? int(device.uplink.speed)                    : 0,
+                "tx_bytes":      has(device.uplink.tx_bytes)   ? int(device.uplink.tx_bytes)                 : 0,
+                "rx_bytes":      has(device.uplink.rx_bytes)   ? int(device.uplink.rx_bytes)                 : 0,
+                "tx_bytes_rate": "tx_bytes-r" in device.uplink ? double(device.uplink["tx_bytes-r"])         : 0.0,
+                "rx_bytes_rate": "rx_bytes-r" in device.uplink ? double(device.uplink["rx_bytes-r"])         : 0.0,
+                "rx_errors":     has(device.uplink.rx_errors)  ? int(device.uplink.rx_errors)                : 0,
+                "tx_errors":     has(device.uplink.tx_errors)  ? int(device.uplink.tx_errors)                : 0,
+                "rx_dropped":    has(device.uplink.rx_dropped) ? int(device.uplink.rx_dropped)               : 0,
+                "tx_dropped":    has(device.uplink.tx_dropped) ? int(device.uplink.tx_dropped)               : 0,
+                "latency_ms":    has(device.uplink.latency)    ? int(device.uplink.latency)                  : 0,
+                "drops":         has(device.uplink.drops)      ? int(device.uplink.drops)                    : 0,
+                "rx_rate_bps":   has(device.uplink.rx_rate)    ? int(device.uplink.rx_rate)                  : 0,
+                "tx_rate_bps":   has(device.uplink.tx_rate)    ? int(device.uplink.tx_rate)                  : 0,
+                "wan_ip": (has(device.type) && device.type == "udm" && has(device.uplink.ip)) ?
+                            string(device.uplink.ip) : ""
+              },
+              "speedtest": !has(device.uplink) ? {} : {
+                "status":    has(device.uplink.speedtest_status) ? string(device.uplink.speedtest_status) : "",
+                "ping_ms":   has(device.uplink.speedtest_ping)   ? int(device.uplink.speedtest_ping)     : 0,
+                "down_mbps": has(device.uplink.xput_down)        ? double(device.uplink.xput_down)       : 0.0,
+                "up_mbps":   has(device.uplink.xput_up)          ? double(device.uplink.xput_up)         : 0.0
+              }
+            }
+          }
+        },
+        "event": {
+          "dataset": "unifi.device",
+          "module":  "unifi"
+        },
+        "service": {"name": "unifi"}
+      })
+    }
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-device
+  - forwarded

@@ -1,0 +1,11 @@
+title: UniFi Firewall Policies
+type: logs
+streams:
+  - input: cel
+    title: UniFi Firewall Policies
+    description: >
+      Firewall policy configuration from the UniFi Network Integration API v1.
+      Captures each policy rule with its action (ALLOW/BLOCK/REJECT), source and
+      destination zones, traffic filters, ordering index, and logging state.
+      Recommended collection interval: 5m or longer (configuration data).
+    template_path: cel.yml.hbs

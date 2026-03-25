@@ -1,0 +1,19 @@
+- name: unifi.ips.signature
+  type: keyword
+  description: IPS/IDS signature name that triggered the event.
+
+- name: unifi.ips.category
+  type: keyword
+  description: Threat category (e.g. malware, exploit, botnet).
+
+- name: unifi.ips.severity
+  type: integer
+  description: Severity level of the IPS event (1=low, 5=critical).
+
+- name: unifi.ips.action
+  type: keyword
+  description: Action taken (alert, drop, reject).
+
+- name: unifi.ips.country
+  type: keyword
+  description: Country code of the source IP.

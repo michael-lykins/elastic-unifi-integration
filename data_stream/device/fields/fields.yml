@@ -1,0 +1,141 @@
+# Device identity
+- name: device.name
+  type: keyword
+  description: Device name as configured in the UniFi console.
+
+- name: device.model
+  type: keyword
+  description: Device model identifier (e.g. UDM-Pro, U6-LR).
+
+- name: device.type
+  type: keyword
+  description: >
+    Device type returned by the UniFi API (e.g. udm, uap, usw).
+
+- name: device.ip
+  type: ip
+  description: Management IP address of the device.
+
+- name: device.mac
+  type: keyword
+  description: MAC address of the device.
+
+- name: device.version
+  type: keyword
+  description: Firmware version running on the device.
+
+- name: device.uptime_sec
+  type: long
+  description: Device uptime in seconds since last reboot.
+
+# Device health
+- name: metrics.unifi.device.state
+  type: integer
+  description: >
+    Device state reported by the UniFi API.
+    1 = connected, 0 = disconnected.
+
+- name: metrics.unifi.device.satisfaction
+  type: integer
+  description: >
+    Device satisfaction score (0–100) as calculated by the UniFi controller.
+
+- name: metrics.unifi.device.num_clients
+  type: integer
+  description: Number of wireless/wired clients currently associated with this device.
+
+# Switch-specific
+- name: metrics.unifi.device.temperature_c
+  type: float
+  description: Internal temperature of the switch in degrees Celsius.
+
+- name: metrics.unifi.device.fan_level_pct
+  type: integer
+  description: Fan speed percentage (switches with active cooling).
+
+- name: metrics.unifi.device.poe_power_w
+  type: float
+  description: Total PoE power draw in Watts across all switch ports.
+
+# Uplink stats (all devices)
+- name: metrics.unifi.device.uplink.up
+  type: boolean
+  description: Whether the device uplink is currently up.
+
+- name: metrics.unifi.device.uplink.speed_mbps
+  type: integer
+  description: Negotiated uplink speed in Mbps.
+
+- name: metrics.unifi.device.uplink.tx_bytes
+  type: long
+  description: Cumulative bytes transmitted on the uplink since last reset.
+
+- name: metrics.unifi.device.uplink.rx_bytes
+  type: long
+  description: Cumulative bytes received on the uplink since last reset.
+
+- name: metrics.unifi.device.uplink.tx_bytes_rate
+  type: float
+  description: Rolling average transmit rate on the uplink in bytes/sec.
+
+- name: metrics.unifi.device.uplink.rx_bytes_rate
+  type: float
+  description: Rolling average receive rate on the uplink in bytes/sec.
+
+- name: metrics.unifi.device.uplink.rx_errors
+  type: long
+  description: Cumulative receive errors on the uplink.
+
+- name: metrics.unifi.device.uplink.tx_errors
+  type: long
+  description: Cumulative transmit errors on the uplink.
+
+- name: metrics.unifi.device.uplink.rx_dropped
+  type: long
+  description: Cumulative received packets dropped on the uplink.
+
+- name: metrics.unifi.device.uplink.tx_dropped
+  type: long
+  description: Cumulative transmitted packets dropped on the uplink.
+
+# WAN-specific (UDM-Pro / gateway only)
+- name: metrics.unifi.device.uplink.latency_ms
+  type: integer
+  description: >
+    WAN uplink latency in milliseconds as measured by the UDM-Pro.
+    Only populated for gateway devices (device.type: udm).
+
+- name: metrics.unifi.device.uplink.drops
+  type: long
+  description: WAN uplink drop count. Only populated for gateway devices.
+
+- name: metrics.unifi.device.uplink.rx_rate_bps
+  type: long
+  description: WAN instantaneous receive rate in bits/sec. Gateway devices only.
+
+- name: metrics.unifi.device.uplink.tx_rate_bps
+  type: long
+  description: WAN instantaneous transmit rate in bits/sec. Gateway devices only.
+
+- name: metrics.unifi.device.uplink.wan_ip
+  type: ip
+  description: >
+    Current WAN IP address assigned to the gateway.
+    Only populated for gateway devices (device.type: udm).
+
+# Speedtest results (UDM-Pro only)
+- name: metrics.unifi.device.speedtest.status
+  type: keyword
+  description: Status of the last speed test run (e.g. "Idle", "Running", "Success").
+
+- name: metrics.unifi.device.speedtest.ping_ms
+  type: integer
+  description: Ping latency measured during the last speed test in milliseconds.
+
+- name: metrics.unifi.device.speedtest.down_mbps
+  type: float
+  description: Download throughput from the last speed test in Mbps.
+
+- name: metrics.unifi.device.speedtest.up_mbps
+  type: float
+  description: Upload throughput from the last speed test in Mbps.

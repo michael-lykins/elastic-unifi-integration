@@ -1,0 +1,10 @@
+title: UniFi DPI Application Stats
+type: metrics
+streams:
+  - input: cel
+    title: UniFi DPI Application Usage
+    description: >
+      Deep Packet Inspection (DPI) application and category usage from the UniFi
+      Network site. Shows per-application bandwidth consumption. Requires DPI to be
+      enabled in UniFi Network > Settings > Security > Traffic Identification.
+    template_path: cel.yml.hbs

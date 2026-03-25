@@ -1,0 +1,56 @@
+interval: {{interval}}
+program: |
+  request("POST",
+    state.url + "/proxy/network/api/s/{{site}}/stat/ips/event"
+  ).with({
+    "Header": {
+      "X-API-KEY":    ["{{api_key}}"],
+      "Content-Type": ["application/json"],
+      "Accept":       ["application/json"]
+    },
+    "Body": bytes(
+      "{\"start\":" + string(int(now) / 1000000 - 3600000) +
+      ",\"end\":"   + string(int(now) / 1000000) +
+      ",\"_limit\":1000}"
+    )
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    {
+      "events": bytes(resp.Body).decode_json().data.map(e, {
+        "unifi": {
+          "ips": {
+            "signature":  has(e.signature)  ? string(e.signature)  : "",
+            "category":   has(e.category)   ? string(e.category)   : "",
+            "severity":   has(e.severity)   ? int(e.severity)      : 0,
+            "action":     has(e.action)     ? string(e.action)     : "",
+            "country":    has(e.country)    ? string(e.country)    : ""
+          }
+        },
+        "source": {
+          "ip":   has(e.src_ip)   ? string(e.src_ip)   : "",
+          "port": has(e.src_port) ? int(e.src_port)    : 0
+        },
+        "destination": {
+          "ip":   has(e.dst_ip)   ? string(e.dst_ip)   : "",
+          "port": has(e.dst_port) ? int(e.dst_port)    : 0
+        },
+        "network": {
+          "transport": has(e.proto) ? string(e.proto) : ""
+        },
+        "message": has(e.signature) ? string(e.signature) : "",
+        "event":   {"dataset": "unifi.ips_event", "module": "unifi"},
+        "service": {"name": "unifi"}
+      })
+    }
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-ips
+  - forwarded

@@ -1,0 +1,22 @@
+title: UniFi Syslog Events
+type: logs
+streams:
+  - input: udp
+    title: UniFi Syslog Events (UDP)
+    description: >
+      Syslog events forwarded from the UDM-Pro via UDP. Covers WiFi associations,
+      DHCP leases, firewall decisions, and system events.
+    template_path: udp.yml.hbs
+    vars:
+      - name: listen_address
+        type: text
+        title: Listen Address
+        description: IP address the Elastic Agent should bind to for syslog UDP.
+        default: "0.0.0.0"
+        required: true
+      - name: listen_port
+        type: integer
+        title: Listen Port
+        description: UDP port to receive syslog on (use 5514 to run unprivileged).
+        default: 5514
+        required: true

@@ -1,0 +1,61 @@
+---
+description: Pipeline for UniFi device metrics collected via the Network API.
+processors:
+  - set:
+      tag: set_ecs_version
+      field: ecs.version
+      value: "8.11.0"
+
+  - set:
+      tag: set_event_kind
+      field: event.kind
+      value: metric
+
+  - set:
+      tag: set_event_type
+      field: event.type
+      value: info
+
+  # Remove empty uplink / speedtest objects so they don't pollute mappings
+  - remove:
+      tag: remove_empty_uplink
+      field: metrics.unifi.device.uplink
+      if: ctx.metrics?.unifi?.device?.uplink != null && ctx.metrics.unifi.device.uplink.isEmpty()
+      ignore_missing: true
+
+  - remove:
+      tag: remove_empty_speedtest
+      field: metrics.unifi.device.speedtest
+      if: ctx.metrics?.unifi?.device?.speedtest != null && ctx.metrics.unifi.device.speedtest.isEmpty()
+      ignore_missing: true
+
+  # Remove empty wan_ip strings
+  - remove:
+      tag: remove_empty_wan_ip
+      field: metrics.unifi.device.uplink.wan_ip
+      if: ctx.metrics?.unifi?.device?.uplink?.wan_ip == ""
+      ignore_missing: true
+
+  # Remove zero-value speedtest fields (test not yet run)
+  - remove:
+      tag: remove_zero_speedtest_down
+      field: metrics.unifi.device.speedtest.down_mbps
+      if: ctx.metrics?.unifi?.device?.speedtest?.down_mbps == 0
+      ignore_missing: true
+
+  - remove:
+      tag: remove_zero_speedtest_up
+      field: metrics.unifi.device.speedtest.up_mbps
+      if: ctx.metrics?.unifi?.device?.speedtest?.up_mbps == 0
+      ignore_missing: true
+
+on_failure:
+  - append:
+      field: error.message
+      value: >-
+        Processor {{ _ingest.on_failure_processor_type }} (tag:
+        {{ _ingest.on_failure_processor_tag }}) failed with message:
+        {{ _ingest.on_failure_message }}
+  - set:
+      field: event.kind
+      value: pipeline_error

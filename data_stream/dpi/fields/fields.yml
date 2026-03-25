@@ -1,0 +1,37 @@
+- name: metrics.unifi.dpi.app
+  type: keyword
+  description: >
+    Numeric application ID assigned by UniFi DPI fingerprinting engine.
+    Resolved to a human-readable name in metrics.unifi.dpi.app_name.
+
+- name: metrics.unifi.dpi.app_name
+  type: keyword
+  description: >
+    Human-readable application name resolved from the UniFi DPI ID table
+    (e.g. "YouTube", "Netflix", "WhatsApp"). Falls back to the raw numeric ID
+    if the application is not in the lookup table.
+
+- name: metrics.unifi.dpi.cat
+  type: keyword
+  description: >
+    Numeric category ID assigned by UniFi DPI fingerprinting engine.
+    Resolved to a human-readable name in metrics.unifi.dpi.cat_name.
+
+- name: metrics.unifi.dpi.cat_name
+  type: keyword
+  description: >
+    Human-readable category name resolved from the UniFi DPI ID table
+    (e.g. "Media streaming services", "Social networks", "VoIP services").
+    Falls back to the raw numeric ID if the category is not in the lookup table.
+
+- name: metrics.unifi.dpi.tx_bytes
+  type: long
+  description: Total bytes sent to this application.
+
+- name: metrics.unifi.dpi.rx_bytes
+  type: long
+  description: Total bytes received from this application.
+
+- name: metrics.unifi.dpi.clients
+  type: integer
+  description: Number of clients using this application.

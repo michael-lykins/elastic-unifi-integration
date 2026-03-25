@@ -1,0 +1,22 @@
+---
+description: Pipeline for UniFi neighboring/rogue AP detection
+processors:
+  - set:
+      field: ecs.version
+      value: "8.11.0"
+  - set:
+      field: event.kind
+      value: metric
+  - set:
+      field: event.type
+      value: info
+on_failure:
+  - append:
+      field: error.message
+      value: >-
+        Processor {{ _ingest.on_failure_processor_type }} (tag:
+        {{ _ingest.on_failure_processor_tag }}) failed with message:
+        {{ _ingest.on_failure_message }}
+  - set:
+      field: event.kind
+      value: pipeline_error
