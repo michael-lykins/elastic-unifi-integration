@@ -1,3 +1,8 @@
+- version: "0.7.2"
+  changes:
+    - description: Fix dashboard ES|QL queries to use ECS-mapped observer.type values (udm→router, uap→wap, usw→switch) after CEL template ECS migration.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/12
 - version: "0.7.1"
   changes:
     - description: Bundle all 5 dashboards (Overview, Topology, Devices, Clients, Insights) in the integration package so they install automatically and appear as Managed assets. Vega topology visualization embedded inline.
