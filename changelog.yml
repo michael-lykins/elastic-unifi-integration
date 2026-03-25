@@ -1,3 +1,8 @@
+- version: "0.7.5"
+  changes:
+    - description: Add Firewall dashboard with 15 panels — WAN attack KPIs, protocol trend, top attacking IPs, top targeted ports, attack type classification, policy zone summary, zone policy matrix (Vega heatmap), and active policy table. Add Firewall nav link to all existing dashboards.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/15
 - version: "0.7.4"
   changes:
     - description: Fix Connected Clients KPI panels (Clients, Overview, Devices dashboards) — was incorrectly summing all polling intervals producing inflated counts; now uses MAX per device in the last 2 minutes then SUM.
