@@ -6,6 +6,18 @@
   type: keyword
   description: OUI (manufacturer) of the client device.
 
+- name: network.name
+  type: keyword
+  description: Network or SSID name the client is connected to.
+
+- name: network.vlan.id
+  type: keyword
+  description: VLAN ID assigned to the client (as string per ECS).
+
+- name: observer.mac
+  type: keyword
+  description: MAC address of the access point (observer) serving this client.
+
 - name: metrics.unifi.client.is_wired
   type: boolean
   description: Whether the client is connected via Ethernet.

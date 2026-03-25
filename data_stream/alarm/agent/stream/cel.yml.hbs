@@ -24,6 +24,14 @@ program: |
             "client_mac": has(a.client)    ? string(a.client)    : ""
           }
         },
+        "observer": {
+          "mac": has(a.sw) ? string(a.sw) :
+                 has(a.ap) ? string(a.ap) :
+                 has(a.gw) ? string(a.gw) : ""
+        },
+        "source": {
+          "mac": has(a.client) ? string(a.client) : ""
+        },
         "message": has(a.msg) ? string(a.msg) : "",
         "event":   {"dataset": "unifi.alarm", "module": "unifi"},
         "service": {"name": "unifi"}

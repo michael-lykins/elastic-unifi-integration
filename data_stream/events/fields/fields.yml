@@ -14,14 +14,12 @@
   type: keyword
   description: Name of the firewall rule that generated this event.
 
-- name: network.interface
+- name: observer.ingress.interface.name
   type: keyword
-  description: Network interface associated with a DHCP event.
+  description: >
+    Inbound network interface name. Populated from iptables IN= field (firewall events)
+    and DHCP interface (dnsmasq DHCPACK events).
 
-- name: network.ingress.interface
+- name: observer.egress.interface.name
   type: keyword
-  description: Ingress network interface name from iptables firewall events.
-
-- name: network.egress.interface
-  type: keyword
-  description: Egress network interface name from iptables firewall events.
+  description: Outbound network interface name from iptables OUT= field (firewall events).

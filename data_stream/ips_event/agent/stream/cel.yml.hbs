@@ -25,9 +25,13 @@ program: |
             "country":    has(e.country)    ? string(e.country)    : ""
           }
         },
+        "rule": {
+          "name": has(e.signature) ? string(e.signature) : ""
+        },
         "source": {
           "ip":   has(e.src_ip)   ? string(e.src_ip)   : "",
-          "port": has(e.src_port) ? int(e.src_port)    : 0
+          "port": has(e.src_port) ? int(e.src_port)    : 0,
+          "geo":  {"country_iso_code": has(e.country) ? string(e.country) : ""}
         },
         "destination": {
           "ip":   has(e.dst_ip)   ? string(e.dst_ip)   : "",
@@ -37,7 +41,7 @@ program: |
           "transport": has(e.proto) ? string(e.proto) : ""
         },
         "message": has(e.signature) ? string(e.signature) : "",
-        "event":   {"dataset": "unifi.ips_event", "module": "unifi"},
+        "event":   {"dataset": "unifi.ips_event", "module": "unifi", "action": has(e.action) ? string(e.action) : ""},
         "service": {"name": "unifi"}
       })
     }

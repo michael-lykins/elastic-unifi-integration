@@ -24,6 +24,12 @@ program: |
             }
           }
         },
+        "network": {
+          "name": has(ap.ssid) ? string(ap.ssid) : ""
+        },
+        "observer": {
+          "mac": has(ap.ap_mac) ? string(ap.ap_mac) : ""
+        },
         "event":   {"dataset": "unifi.rogue_ap", "module": "unifi"},
         "service": {"name": "unifi"}
       })

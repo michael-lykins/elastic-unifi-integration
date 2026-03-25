@@ -1,3 +1,11 @@
+- name: network.name
+  type: keyword
+  description: SSID broadcast by the neighboring AP (ECS copy of metrics.unifi.rogue_ap.ssid).
+
+- name: observer.mac
+  type: keyword
+  description: MAC of the UniFi AP that detected this neighboring AP (ECS copy of metrics.unifi.rogue_ap.ap_mac).
+
 - name: metrics.unifi.rogue_ap.bssid
   type: keyword
   description: BSSID (MAC address) of the neighboring AP.

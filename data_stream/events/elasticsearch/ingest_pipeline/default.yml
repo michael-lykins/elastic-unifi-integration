@@ -52,7 +52,7 @@ processors:
       field: message
       if: "ctx.process?.name == null && ctx.message != null && ctx.message.contains('IN=') && ctx.message.contains('SRC=')"
       patterns:
-        - "(?:<%{NONNEGINT}>)?%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} \\[%{DATA:rule.name}\\](?:\\s+DESCR=\"%{DATA:rule.description}\")?\\s+IN=%{DATA:network.ingress.interface}\\s+OUT=%{DATA:network.egress.interface}\\s+(?:MAC=%{DATA:source.mac}\\s+)?SRC=%{IP:source.ip}\\s+DST=%{IP:destination.ip}(?:.*?PROTO=%{WORD:network.transport})?(?:.*?\\bSPT=%{INT:source.port})?(?:.*?\\bDPT=%{INT:destination.port})?"
+        - "(?:<%{NONNEGINT}>)?%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} \\[%{DATA:rule.name}\\](?:\\s+DESCR=\"%{DATA:rule.description}\")?\\s+IN=%{DATA:observer.ingress.interface.name}\\s+OUT=%{DATA:observer.egress.interface.name}\\s+(?:MAC=%{DATA:source.mac}\\s+)?SRC=%{IP:source.ip}\\s+DST=%{IP:destination.ip}(?:.*?PROTO=%{WORD:network.transport})?(?:.*?\\bSPT=%{INT:source.port})?(?:.*?\\bDPT=%{INT:destination.port})?"
       ignore_failure: true
 
   - set:
@@ -181,7 +181,7 @@ processors:
       field: message
       if: "ctx.process?.name != null && (ctx.process.name == 'dnsmasq' || ctx.process.name.startsWith('dnsmasq-dhcp')) && ctx.message.contains('DHCPACK')"
       patterns:
-        - "DHCPACK\\(%{DATA:network.interface}\\) %{IP:client.ip} %{MAC:client.mac}(?:%{SPACE}%{HOSTNAME:client.hostname})?"
+        - "DHCPACK\\(%{DATA:observer.ingress.interface.name}\\) %{IP:client.ip} %{MAC:client.mac}(?:%{SPACE}%{HOSTNAME:client.hostname})?"
       ignore_failure: true
 
   - set:
@@ -220,7 +220,7 @@ processors:
       field: message
       if: "ctx.process?.name == 'kernel' && ctx.message.contains('IN=')"
       patterns:
-        - "%{DATA:rule.name}IN=%{DATA:network.ingress.interface} OUT=%{DATA:network.egress.interface} (?:MAC=%{DATA:source.mac} )?SRC=%{IP:source.ip} DST=%{IP:destination.ip}(?:%{SPACE}LEN=%{INT:network.bytes})?(?:%{SPACE}.* PROTO=%{WORD:network.transport})?(?:%{SPACE}SPT=%{INT:source.port})?(?:%{SPACE}DPT=%{INT:destination.port})?"
+        - "%{DATA:rule.name}IN=%{DATA:observer.ingress.interface.name} OUT=%{DATA:observer.egress.interface.name} (?:MAC=%{DATA:source.mac} )?SRC=%{IP:source.ip} DST=%{IP:destination.ip}(?:%{SPACE}LEN=%{INT:network.bytes})?(?:%{SPACE}.* PROTO=%{WORD:network.transport})?(?:%{SPACE}SPT=%{INT:source.port})?(?:%{SPACE}DPT=%{INT:destination.port})?"
       ignore_failure: true
 
   - set:

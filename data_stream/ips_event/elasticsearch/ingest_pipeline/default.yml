@@ -14,6 +14,18 @@ processors:
       field: event.type
       value: denied
   - remove:
+      field: rule.name
+      if: "ctx?.rule?.name == ''"
+      ignore_missing: true
+  - remove:
+      field: source.geo.country_iso_code
+      if: "ctx?.source?.geo?.country_iso_code == ''"
+      ignore_missing: true
+  - remove:
+      field: event.action
+      if: "ctx?.event?.action == ''"
+      ignore_missing: true
+  - remove:
       field: source.ip
       if: "ctx?.source?.ip == ''"
       ignore_missing: true

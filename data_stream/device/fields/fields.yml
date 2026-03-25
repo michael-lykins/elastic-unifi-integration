@@ -1,34 +1,39 @@
-# Device identity
-- name: device.name
+# ECS observer fields — UniFi network devices are observers in ECS terminology
+- name: observer.name
   type: keyword
   description: Device name as configured in the UniFi console.
 
-- name: device.model
+- name: observer.product
   type: keyword
   description: Device model identifier (e.g. UDM-Pro, U6-LR).
 
-- name: device.type
+- name: observer.type
   type: keyword
   description: >
-    Device type returned by the UniFi API (e.g. udm, uap, usw).
+    ECS-normalized device type: router (UDM-Pro/USG), wap (access point), switch (USW).
 
-- name: device.ip
+- name: observer.ip
   type: ip
   description: Management IP address of the device.
 
-- name: device.mac
+- name: observer.mac
   type: keyword
   description: MAC address of the device.
 
-- name: device.version
+- name: observer.version
   type: keyword
   description: Firmware version running on the device.
 
-- name: device.uptime_sec
+# Custom UniFi device fields (no ECS equivalent)
+- name: unifi.device.type
+  type: keyword
+  description: Raw device type string returned by the UniFi API (udm, uap, usw, usg).
+
+- name: unifi.device.uptime_sec
   type: long
   description: Device uptime in seconds since last reboot.
 
-# Device health
+# Device health metrics
 - name: metrics.unifi.device.state
   type: integer
   description: >
@@ -98,16 +103,14 @@
   type: long
   description: Cumulative transmitted packets dropped on the uplink.
 
-# WAN-specific (UDM-Pro / gateway only)
+# WAN-specific (gateway only)
 - name: metrics.unifi.device.uplink.latency_ms
   type: integer
-  description: >
-    WAN uplink latency in milliseconds as measured by the UDM-Pro.
-    Only populated for gateway devices (device.type: udm).
+  description: WAN uplink latency in milliseconds. Gateway devices only.
 
 - name: metrics.unifi.device.uplink.drops
   type: long
-  description: WAN uplink drop count. Only populated for gateway devices.
+  description: WAN uplink drop count. Gateway devices only.
 
 - name: metrics.unifi.device.uplink.rx_rate_bps
   type: long
@@ -120,13 +123,12 @@
 - name: metrics.unifi.device.uplink.wan_ip
   type: ip
   description: >
-    Current WAN IP address assigned to the gateway.
-    Only populated for gateway devices (device.type: udm).
+    Current WAN IP address assigned to the gateway. Gateway devices only.
 
 # Speedtest results (UDM-Pro only)
 - name: metrics.unifi.device.speedtest.status
   type: keyword
-  description: Status of the last speed test run (e.g. "Idle", "Running", "Success").
+  description: Status of the last speed test run (Idle, Running, Success).
 
 - name: metrics.unifi.device.speedtest.ping_ms
   type: integer

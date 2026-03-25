@@ -1,3 +1,11 @@
+- name: observer.mac
+  type: keyword
+  description: MAC address of the UniFi device (gateway/AP/switch) that raised the alarm.
+
+- name: source.mac
+  type: keyword
+  description: MAC address of the client associated with the alarm.
+
 - name: unifi.alarm.key
   type: keyword
   description: Alarm key/type identifier.

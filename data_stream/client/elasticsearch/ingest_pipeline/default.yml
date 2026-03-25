@@ -17,6 +17,31 @@ processors:
       field: metrics.unifi.client.wifi
       if: "ctx?.metrics?.unifi?.client?.wifi != null && ctx.metrics.unifi.client.wifi.isEmpty()"
       ignore_missing: true
+
+  # Convert client.ip string → ECS ip type
+  - remove:
+      field: client.ip
+      if: "ctx?.client?.ip == ''"
+      ignore_missing: true
+  - convert:
+      field: client.ip
+      type: ip
+      ignore_missing: true
+      ignore_failure: true
+
+  # Remove empty ECS fields added by CEL
+  - remove:
+      field: network.name
+      if: "ctx?.network?.name == ''"
+      ignore_missing: true
+  - remove:
+      field: network.vlan.id
+      if: "ctx?.network?.vlan?.id == ''"
+      ignore_missing: true
+  - remove:
+      field: observer.mac
+      if: "ctx?.observer?.mac == ''"
+      ignore_missing: true
 on_failure:
   - append:
       field: error.message

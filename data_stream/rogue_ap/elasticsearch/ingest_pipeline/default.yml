@@ -10,6 +10,14 @@ processors:
   - set:
       field: event.type
       value: info
+  - remove:
+      field: network.name
+      if: "ctx?.network?.name == ''"
+      ignore_missing: true
+  - remove:
+      field: observer.mac
+      if: "ctx?.observer?.mac == ''"
+      ignore_missing: true
 on_failure:
   - append:
       field: error.message

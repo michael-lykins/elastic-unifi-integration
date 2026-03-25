@@ -10,14 +10,22 @@ program: |
   }).do_request().as(resp, resp.StatusCode == 200 ?
     {
       "events": bytes(resp.Body).decode_json().data.map(device, {
-        "device": {
-          "name":       has(device.name)    ? string(device.name)    : "",
-          "model":      has(device.model)   ? string(device.model)   : "",
-          "type":       has(device.type)    ? string(device.type)    : "",
-          "ip":         has(device.ip)      ? string(device.ip)      : "",
-          "mac":        has(device.mac)     ? string(device.mac)     : "",
-          "version":    has(device.version) ? string(device.version) : "",
-          "uptime_sec": has(device.uptime)  ? int(device.uptime)     : 0
+        "observer": {
+          "name":    has(device.name)    ? string(device.name)    : "",
+          "product": has(device.model)   ? string(device.model)   : "",
+          "type":    !has(device.type)   ? "" :
+                     device.type == "udm" || device.type == "usg" ? "router" :
+                     device.type == "uap" ? "wap" :
+                     device.type == "usw" ? "switch" : string(device.type),
+          "ip":      has(device.ip)      ? string(device.ip)      : "",
+          "mac":     has(device.mac)     ? string(device.mac)     : "",
+          "version": has(device.version) ? string(device.version) : ""
+        },
+        "unifi": {
+          "device": {
+            "type":       has(device.type)   ? string(device.type)   : "",
+            "uptime_sec": has(device.uptime) ? int(device.uptime)    : 0
+          }
         },
         "host": {
           "name": has(device.name) ? string(device.name) : ""

@@ -16,6 +16,13 @@ program: |
           "ip":       has(c.ip)       ? string(c.ip)       : "",
           "oui":      has(c.oui)      ? string(c.oui)      : ""
         },
+        "network": {
+          "name": has(c.essid) ? string(c.essid) : has(c.network) ? string(c.network) : "",
+          "vlan":  {"id": has(c.vlan) ? string(int(c.vlan)) : ""}
+        },
+        "observer": {
+          "mac": has(c.ap_mac) ? string(c.ap_mac) : ""
+        },
         "host": {
           "name": has(c.hostname) ? string(c.hostname) : has(c.name) ? string(c.name) : (has(c.mac) ? string(c.mac) : "")
         },

@@ -1,3 +1,11 @@
+- name: rule.name
+  type: keyword
+  description: IPS/IDS rule/signature name that triggered the event (ECS copy of unifi.ips.signature).
+
+- name: source.geo.country_iso_code
+  type: keyword
+  description: ISO country code of the source IP (ECS copy of unifi.ips.country).
+
 - name: unifi.ips.signature
   type: keyword
   description: IPS/IDS signature name that triggered the event.
