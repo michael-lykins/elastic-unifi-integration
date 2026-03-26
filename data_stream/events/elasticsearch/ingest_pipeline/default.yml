@@ -58,19 +58,23 @@ processors:
   - set:
       tag: set_category_iptables_bracket
       field: event.category
-      value: firewall
+      value: network
       if: "ctx.process?.name == null && ctx.source?.ip != null && ctx.rule?.name != null"
 
   - script:
       tag: set_action_iptables_bracket
       lang: painless
-      if: "ctx.event?.category == 'firewall' && ctx.event?.action == null && ctx.rule?.name != null"
+      if: "ctx.event?.category == 'network' && ctx.event?.action == null && ctx.rule?.name != null && ctx.source?.ip != null"
       source: |
         String ruleName = ctx.rule.name;
         if (ruleName.contains('-D-') || ruleName.endsWith('-D')) {
           ctx.event.action = 'firewall_block';
+          ctx.event.type = 'denied';
+          ctx.event.outcome = 'success';
         } else {
           ctx.event.action = 'firewall_accept';
+          ctx.event.type = 'connection';
+          ctx.event.outcome = 'success';
         }
 
   # ── Device-forwarded syslog (UniFi APs and switches) ─────────────────────────
@@ -344,6 +348,37 @@ processors:
       type: long
       ignore_missing: true
       ignore_failure: true
+
+  # ── ECS compliance: lowercase network.transport ──────────────────────────────
+  # iptables PROTO= field is uppercase (TCP, UDP, ICMP). ECS requires lowercase.
+  - lowercase:
+      tag: lowercase_network_transport
+      field: network.transport
+      ignore_missing: true
+      ignore_failure: true
+
+  # ── ECS compliance: split iptables MAC header into destination.mac + source.mac
+  # The iptables MAC= field is the full Ethernet frame header in the format:
+  #   DST_MAC(6 octets):SRC_MAC(6 octets):ETHERTYPE(2 octets)
+  # e.g. 74:ac:b9:d9:f1:dd:c2:03:80:a1:7f:e3:08:00
+  # We extract the first 6 octets as destination.mac and the next 6 as source.mac,
+  # formatted per RFC 7042 / ECS standard (uppercase, hyphen-separated).
+  - script:
+      tag: parse_iptables_mac_header
+      lang: painless
+      if: "ctx.source?.mac != null && ctx.source.mac.length() > 17 && ctx.source.mac.contains(':')"
+      source: |
+        String raw = ctx.source.mac;
+        String[] parts = raw.splitOnToken(':');
+        if (parts.length >= 12) {
+          String dstMac = (parts[0] + '-' + parts[1] + '-' + parts[2] + '-' +
+                           parts[3] + '-' + parts[4] + '-' + parts[5]).toUpperCase();
+          String srcMac = (parts[6] + '-' + parts[7] + '-' + parts[8] + '-' +
+                           parts[9] + '-' + parts[10] + '-' + parts[11]).toUpperCase();
+          if (ctx.destination == null) { ctx.destination = new HashMap(); }
+          ctx.destination.mac = dstMac;
+          ctx.source.mac = srcMac;
+        }
 
   # ── Cleanup ─────────────────────────────────────────────────────────────────
   - remove:

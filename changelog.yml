@@ -1,3 +1,56 @@
+- version: "0.8.3"
+  changes:
+    - description: >
+        Fix ECS compliance for iptables/firewall events in the events ingest pipeline.
+        (1) Correct event.category from "firewall" (invalid) to "network" (ECS standard).
+        (2) Set event.type ("connection" / "denied") and event.outcome ("success") for
+        bracket-format iptables events. (3) Lowercase network.transport — iptables PROTO
+        field is uppercase (TCP/UDP/ICMP) but ECS requires lowercase. (4) Fix source.mac
+        extraction — iptables MAC= field is the full Ethernet frame header (DST:SRC:ETHERTYPE);
+        now splits into destination.mac (first 6 octets) and source.mac (next 6 octets),
+        formatted per RFC 7042 (uppercase, hyphen-separated). (5) Declare missing ECS fields:
+        destination.mac, rule.description, observer.mac, observer.product, user.target.name,
+        event.outcome.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/23
+- version: "0.8.2"
+  changes:
+    - description: Fix syslog panels on Overview, Clients, and Insights dashboards — syslog events now route to logs-unifi.events-* (not logs-unifi.syslog-*) since Elastic Agent 9.3.2. Update all adHocDataView index patterns and ES|QL queries to use logs-unifi.events-* so recent-window time pickers show data correctly.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/22
+- version: "0.8.1"
+  changes:
+    - description: Fix DHCP Events by AP/Host panel — column mapping referenced client_mac but query groups by iface, causing "invalid column" error.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/21
+- version: "0.8.0"
+  changes:
+    - description: Fix DPI pie chart (primaryGroups/metrics schema) and table (flat viz format) so Traffic by Category and Top 30 Apps panels render correctly. Add timeFieldName to all adHocDataViews in Devices, Topology, Firewall, and DPI dashboards so the time picker filters correctly. Widen default time range from 24h to 7d on Overview, Clients, Insights, and Firewall dashboards for better syslog/event visibility.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/21
+- version: "0.7.9"
+  changes:
+    - description: Add DPI dashboard with 9 panels — Total Traffic/Download/Upload/Unique-Apps KPIs, Top 15 Apps horizontal bar, Traffic by Category donut, Download vs Upload stacked bar, and detailed app table. Add DPI nav link to all 6 existing dashboards.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/20
+- version: "0.7.8"
+  changes:
+    - description: Remove Health dashboard — data is visible in other dashboards. Strip Health nav link from all remaining dashboard nav bars (Overview, Topology, Devices, Clients, Insights, Firewall).
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/19
+- version: "0.7.7"
+  changes:
+    - description: Fix DPI app name resolution — use compound ID (cat*65536+app) for lookup so apps in non-IM categories (SSL/TLS=239GB, QUIC, Zoom, YouTube, Spotify, iCloud, Gmail, Apple.com, etc.) now resolve correctly instead of returning wrong category-0 names. Add missing small-ID entries (MSN, Raidcall, Beanfun). Add TRIM(client_mac) after DISSECT in DHCP queries to strip trailing newline. Fix DHCP Events by AP/Host to group by interface. Fix timeFieldName on all adHocDataViews so all KPI panels respond to dashboard time picker. Fix Health dashboard — Uptime panel was using empty snmp index; WAN Latency and Throughput panels were using zeroed-out Logstash index; all three now read from metrics-unifi.device-default.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/18
+- version: "0.7.6"
+  changes:
+    - description: Fix DPI data stream for UniFi Network 10.x — migrate from stat/sitedpi (dropped in v10 migration) to stat/report/daily.gw. DPI stats are now read from the embedded dpi map in the daily gateway report and parsed as per-app events, restoring app/category traffic visibility.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/16
+    - description: Fix Most Active Clients panel in Clients dashboard — was querying client.hostname (never populated); now uses DISSECT on raw message to extract client_mac from DHCP syslog entries.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/17
 - version: "0.7.5"
   changes:
     - description: Add Firewall dashboard with 15 panels — WAN attack KPIs, protocol trend, top attacking IPs, top targeted ports, attack type classification, policy zone summary, zone policy matrix (Vega heatmap), and active policy table. Add Firewall nav link to all existing dashboards.

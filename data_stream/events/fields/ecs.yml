@@ -25,6 +25,8 @@
 - external: ecs
   name: destination.port
 - external: ecs
+  name: destination.mac
+- external: ecs
   name: network.transport
 - external: ecs
   name: network.bytes
@@ -36,5 +38,17 @@
   name: log.syslog.severity.name
 - external: ecs
   name: log.syslog.facility.name
+- external: ecs
+  name: event.outcome
+- external: ecs
+  name: rule.description
+- external: ecs
+  name: observer.mac
+- external: ecs
+  name: observer.product
+- external: ecs
+  name: user.target.name
+- external: ecs
+  name: user.target.id
 - external: ecs
   name: error.message

@@ -23,3 +23,7 @@
 - name: observer.egress.interface.name
   type: keyword
   description: Outbound network interface name from iptables OUT= field (firewall events).
+
+- name: user.auth_method
+  type: keyword
+  description: SSH authentication method used (e.g. publickey, password).
