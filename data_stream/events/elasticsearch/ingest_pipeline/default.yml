@@ -52,7 +52,14 @@ processors:
       field: message
       if: "ctx.process?.name == null && ctx.message != null && ctx.message.contains('IN=') && ctx.message.contains('SRC=')"
       patterns:
-        - "(?:<%{NONNEGINT}>)?%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} \\[%{DATA:rule.name}\\](?:\\s+DESCR=\"%{DATA:rule.description}\")?\\s+IN=%{DATA:observer.ingress.interface.name}\\s+OUT=%{DATA:observer.egress.interface.name}\\s+(?:MAC=%{DATA:source.mac}\\s+)?SRC=%{IP:source.ip}\\s+DST=%{IP:destination.ip}(?:.*?PROTO=%{WORD:network.transport})?(?:.*?\\bSPT=%{INT:source.port})?(?:.*?\\bDPT=%{INT:destination.port})?"
+        - "(?:<%{NONNEGINT:log.syslog.priority}>)?%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} \\[%{DATA:rule.name}\\](?:\\s+DESCR=\"%{DATA:rule.description}\")?\\s+IN=%{DATA:observer.ingress.interface.name}\\s+OUT=%{DATA:observer.egress.interface.name}\\s+(?:MAC=%{DATA:source.mac}\\s+)?SRC=%{IP:source.ip}\\s+DST=%{IP:destination.ip}(?:.*?PROTO=%{WORD:network.transport})?(?:.*?\\bSPT=%{INT:source.port})?(?:.*?\\bDPT=%{INT:destination.port})?"
+      ignore_failure: true
+
+  - convert:
+      tag: convert_syslog_priority
+      field: log.syslog.priority
+      type: long
+      ignore_missing: true
       ignore_failure: true
 
   - set:
@@ -76,6 +83,34 @@ processors:
           ctx.event.type = 'connection';
           ctx.event.outcome = 'success';
         }
+
+  # Rewrite message to a clean human-readable summary.
+  # The raw syslog line (including <PRI>, timestamp, hostname, and all iptables
+  # KV pairs) has now been fully parsed into ECS fields — message should reflect
+  # what happened, not repeat the raw wire format.
+  # Result example: "WAN ICMP ECHO - Request: tcp 177.36.62.220:47459 -> 142.56.57.103:443 in:eth8"
+  - script:
+      tag: rewrite_message_iptables_bracket
+      lang: painless
+      if: "ctx.event?.action == 'firewall_accept' || ctx.event?.action == 'firewall_block'"
+      source: |
+        String proto  = ctx.network?.transport != null  ? ctx.network.transport : "?";
+        String srcIp  = ctx.source?.ip != null          ? ctx.source.ip : "?";
+        String dstIp  = ctx.destination?.ip != null     ? ctx.destination.ip : "?";
+        String iface  = (ctx.observer?.ingress?.interface?.name != null &&
+                         ctx.observer.ingress.interface.name.length() > 0)
+                        ? ctx.observer.ingress.interface.name : null;
+        String descr  = ctx.rule?.description != null && ctx.rule.description.length() > 0
+                        ? ctx.rule.description : ctx.rule?.name;
+
+        StringBuilder msg = new StringBuilder();
+        if (descr != null) { msg.append(descr).append(": "); }
+        msg.append(proto).append(" ").append(srcIp);
+        if (ctx.source?.port != null) { msg.append(":").append(ctx.source.port); }
+        msg.append(" -> ").append(dstIp);
+        if (ctx.destination?.port != null) { msg.append(":").append(ctx.destination.port); }
+        if (iface != null) { msg.append(" in:").append(iface); }
+        ctx.message = msg.toString();
 
   # ── Device-forwarded syslog (UniFi APs and switches) ─────────────────────────
   # When a UniFi device (AP, switch) forwards its own syslog through the UDM-Pro,

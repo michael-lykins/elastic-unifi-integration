@@ -1,7 +1,7 @@
 format_version: 3.2.2
 name: unifi
 title: UniFi
-version: 0.8.3
+version: 0.8.4
 description: >
   Monitor UniFi network devices using the UniFi Network Local API and syslog.
   Collects per-device metrics (WAN stats, uplink latency, speedtest results,

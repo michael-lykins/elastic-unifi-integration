@@ -1,3 +1,13 @@
+- version: "0.8.4"
+  changes:
+    - description: >
+        Fix iptables firewall event message field. (1) Extract log.syslog.priority from
+        the <PRI> prefix (was silently discarded). (2) Rewrite message from raw syslog
+        line to a clean human-readable summary, e.g. "WAN ICMP ECHO - Request: tcp
+        177.36.62.220:47459 -> 142.56.57.103:443 in:eth8" — all KV data is already
+        parsed into ECS fields so the raw wire format in message was redundant noise.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/23
 - version: "0.8.3"
   changes:
     - description: >
