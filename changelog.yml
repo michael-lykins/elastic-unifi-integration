@@ -1,3 +1,15 @@
+- version: "0.8.5"
+  changes:
+    - description: >
+        Add full firewall policy filter capture and config change detection.
+        CEL collector now captures complete trafficFilter details: source/destination
+        MAC addresses, IP addresses, ports, and ip_protocol (critical — missing protocol
+        filter is what caused the WAN ICMP rules to compile as ACCEPT-ALL in iptables).
+        Ingest pipeline adds SHA-256 config_hash fingerprint via fingerprint processor,
+        enabling the Kibana change-detection alerting rule to diff consecutive poll
+        windows and fire on any rule add, delete, or modification.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/24
 - version: "0.8.4"
   changes:
     - description: >

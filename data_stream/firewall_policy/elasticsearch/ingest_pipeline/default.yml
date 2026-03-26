@@ -65,6 +65,38 @@ processors:
       value: denied
       if: "ctx.unifi?.firewall_policy?.enabled == true && (ctx.unifi?.firewall_policy?.action?.type == 'BLOCK' || ctx.unifi?.firewall_policy?.action?.type == 'REJECT')"
 
+  # ── Config fingerprint for change detection ─────────────────────────────────
+  # SHA-256 hash of the rule's complete configuration. When this hash changes
+  # between two consecutive poll windows for the same rule ID, a Kibana alerting
+  # rule detects it and creates an audit record showing exactly what changed.
+  # Covers everything that defines rule behaviour: name, action, zones, filter
+  # values (MACs/IPs/ports), protocol scope, logging state. Rule ID and origin
+  # are excluded — they are stable identifiers, not configuration.
+  - fingerprint:
+      tag: fingerprint_rule_config
+      fields:
+        - unifi.firewall_policy.name
+        - unifi.firewall_policy.enabled
+        - unifi.firewall_policy.index
+        - unifi.firewall_policy.action.type
+        - unifi.firewall_policy.action.allow_return_traffic
+        - unifi.firewall_policy.source.zone_id
+        - unifi.firewall_policy.source.filter_type
+        - unifi.firewall_policy.source.mac_addresses
+        - unifi.firewall_policy.source.ip_addresses
+        - unifi.firewall_policy.source.ports
+        - unifi.firewall_policy.destination.zone_id
+        - unifi.firewall_policy.destination.filter_type
+        - unifi.firewall_policy.destination.mac_addresses
+        - unifi.firewall_policy.destination.ip_addresses
+        - unifi.firewall_policy.destination.ports
+        - unifi.firewall_policy.ip_version
+        - unifi.firewall_policy.ip_protocol
+        - unifi.firewall_policy.logging_enabled
+      target_field: unifi.firewall_policy.config_hash
+      method: SHA-256
+      ignore_missing: true
+
 on_failure:
   - append:
       field: error.message

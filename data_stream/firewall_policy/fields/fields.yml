@@ -36,6 +36,24 @@
   type: keyword
   description: Source traffic filter type — ANY, MAC_ADDRESS, or IP_ADDRESS.
 
+- name: unifi.firewall_policy.source.mac_addresses
+  type: keyword
+  description: >
+    MAC addresses in the source filter (when filter_type is MAC_ADDRESS).
+    Multi-value field — one entry per MAC.
+
+- name: unifi.firewall_policy.source.ip_addresses
+  type: ip
+  description: >
+    IP addresses or CIDR ranges in the source filter (when filter_type is IP_ADDRESS).
+    Multi-value field — one entry per address/range.
+
+- name: unifi.firewall_policy.source.ports
+  type: keyword
+  description: >
+    Ports or port ranges in the source port filter.
+    Multi-value field — one entry per port or range string.
+
 - name: unifi.firewall_policy.destination.zone_id
   type: keyword
   description: UUID of the destination firewall zone.
@@ -48,9 +66,32 @@
   type: keyword
   description: Destination traffic filter type — ANY, MAC_ADDRESS, or IP_ADDRESS.
 
+- name: unifi.firewall_policy.destination.mac_addresses
+  type: keyword
+  description: MAC addresses in the destination filter (when filter_type is MAC_ADDRESS).
+
+- name: unifi.firewall_policy.destination.ip_addresses
+  type: ip
+  description: >
+    IP addresses or CIDR ranges in the destination filter (when filter_type is IP_ADDRESS).
+    Multi-value field — one entry per address/range.
+
+- name: unifi.firewall_policy.destination.ports
+  type: keyword
+  description: >
+    Ports or port ranges in the destination port filter.
+    Multi-value field — one entry per port or range string.
+
 - name: unifi.firewall_policy.ip_version
   type: keyword
-  description: IP protocol scope — IPV4_AND_IPV6, IPV4_ONLY, or IPV6_ONLY.
+  description: IP version scope — IPV4, IPV6, or IPV4_AND_IPV6.
+
+- name: unifi.firewall_policy.ip_protocol
+  type: keyword
+  description: >
+    Layer-4 protocol filter — TCP, UDP, ICMP, ICMPv6, etc.
+    "ANY" when no protocol restriction is configured.
+    A rule with filter_type ANY and ip_protocol ANY matches ALL traffic in its zone pair.
 
 - name: unifi.firewall_policy.logging_enabled
   type: boolean
@@ -59,3 +100,10 @@
 - name: unifi.firewall_policy.origin
   type: keyword
   description: Policy origin — USER_DEFINED or SYSTEM_DEFINED.
+
+- name: unifi.firewall_policy.config_hash
+  type: keyword
+  description: >
+    SHA-256 fingerprint of the rule's complete configuration (name, action, zones,
+    filter values, protocol scope, logging state). Used by the Kibana change-detection
+    alerting rule to identify when any aspect of a rule has been added, removed, or modified.

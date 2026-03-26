@@ -5,9 +5,8 @@ program: |
   //   2. GET /sites/{id}/firewall/zones    → build zone-name lookup
   //   3. GET /sites/{id}/firewall/policies → emit one doc per policy rule
   //
-  // All requests are chained with nested .as() so no cross-interval state is
-  // needed.  A limit of 100 covers typical single-site deployments (usually
-  // fewer than 100 user-defined rules).
+  // Full filter details (MACs, IPs, ports, protocol) are captured so that a
+  // fingerprint processor can hash the complete rule config for change detection.
   request("GET",
     state.url + "/proxy/network/integration/v1/sites"
   ).with({
@@ -64,19 +63,54 @@ program: |
                         "type":                p.action.type,
                         "allow_return_traffic": has(p.action.allowReturnTraffic) ? p.action.allowReturnTraffic : false
                       },
+                      // ── Source filter ────────────────────────────────────
                       "source": {
                         "zone_id":     p.source.zoneId,
                         "zone_name":   zones.filter(z, z.id == p.source.zoneId).as(m,
                                          m.size() > 0 ? m[0].name : p.source.zoneId),
-                        "filter_type": has(p.source.trafficFilter) ? p.source.trafficFilter.type : "ANY"
+                        "filter_type": has(p.source.trafficFilter) ? p.source.trafficFilter.type : "ANY",
+                        "mac_addresses": (has(p.source.trafficFilter) &&
+                                          has(p.source.trafficFilter.macAddressFilter) &&
+                                          has(p.source.trafficFilter.macAddressFilter.macAddresses))
+                                         ? p.source.trafficFilter.macAddressFilter.macAddresses : [],
+                        "ip_addresses": (has(p.source.trafficFilter) &&
+                                         has(p.source.trafficFilter.ipAddressFilter) &&
+                                         has(p.source.trafficFilter.ipAddressFilter.items))
+                                        ? p.source.trafficFilter.ipAddressFilter.items.map(i, string(i.value)) : [],
+                        "ports":        (has(p.source.trafficFilter) &&
+                                         has(p.source.trafficFilter.portFilter) &&
+                                         has(p.source.trafficFilter.portFilter.items))
+                                        ? p.source.trafficFilter.portFilter.items.map(i, string(i.value)) : []
                       },
+                      // ── Destination filter ───────────────────────────────
                       "destination": {
                         "zone_id":     p.destination.zoneId,
                         "zone_name":   zones.filter(z, z.id == p.destination.zoneId).as(m,
                                          m.size() > 0 ? m[0].name : p.destination.zoneId),
-                        "filter_type": has(p.destination.trafficFilter) ? p.destination.trafficFilter.type : "ANY"
+                        "filter_type": has(p.destination.trafficFilter) ? p.destination.trafficFilter.type : "ANY",
+                        "mac_addresses": (has(p.destination.trafficFilter) &&
+                                          has(p.destination.trafficFilter.macAddressFilter) &&
+                                          has(p.destination.trafficFilter.macAddressFilter.macAddresses))
+                                         ? p.destination.trafficFilter.macAddressFilter.macAddresses : [],
+                        "ip_addresses": (has(p.destination.trafficFilter) &&
+                                         has(p.destination.trafficFilter.ipAddressFilter) &&
+                                         has(p.destination.trafficFilter.ipAddressFilter.items))
+                                        ? p.destination.trafficFilter.ipAddressFilter.items.map(i, string(i.value)) : [],
+                        "ports":        (has(p.destination.trafficFilter) &&
+                                         has(p.destination.trafficFilter.portFilter) &&
+                                         has(p.destination.trafficFilter.portFilter.items))
+                                        ? p.destination.trafficFilter.portFilter.items.map(i, string(i.value)) : []
                       },
-                      "ip_version":      has(p.ipProtocolScope) && has(p.ipProtocolScope.ipVersion) ? string(p.ipProtocolScope.ipVersion) : "",
+                      // ── Protocol scope ───────────────────────────────────
+                      // ip_version: IPV4, IPV6, or IPV4_AND_IPV6
+                      // ip_protocol: TCP, UDP, ICMP, ICMPv6, etc. — "ANY" when not restricted.
+                      // A missing ip_protocol means no protocol filter (catches all traffic).
+                      // This field is critical: the WAN ICMP rules had no ip_protocol set,
+                      // making them ACCEPT-ALL rules despite being named for ICMP only.
+                      "ip_version":  has(p.ipProtocolScope) && has(p.ipProtocolScope.ipVersion)
+                                     ? string(p.ipProtocolScope.ipVersion) : "",
+                      "ip_protocol": has(p.ipProtocolScope) && has(p.ipProtocolScope.ipProtocol)
+                                     ? string(p.ipProtocolScope.ipProtocol) : "ANY",
                       "logging_enabled": p.loggingEnabled,
                       "origin":          has(p.metadata) && has(p.metadata.origin) ? string(p.metadata.origin) : ""
                     }
