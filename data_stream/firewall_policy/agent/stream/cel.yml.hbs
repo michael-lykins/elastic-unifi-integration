@@ -55,7 +55,7 @@ program: |
                 {
                   "unifi": {
                     "firewall_policy": {
-                      "id":      p.id,
+                      "id":      has(p.id) ? p.id : "",
                       "name":    has(p.name) ? string(p.name) : "",
                       "enabled": p.enabled,
                       "index":   int(p.index),
