@@ -55,6 +55,21 @@ processors:
         - "(?:<%{NONNEGINT:log.syslog.priority}>)?%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} \\[%{DATA:rule.name}\\](?:\\s+DESCR=\"%{DATA:rule.description}\")?\\s+IN=%{DATA:observer.ingress.interface.name}\\s+OUT=%{DATA:observer.egress.interface.name}\\s+(?:MAC=%{DATA:source.mac}\\s+)?SRC=%{IP:source.ip}\\s+DST=%{IP:destination.ip}(?:.*?PROTO=%{WORD:network.transport})?(?:.*?\\bSPT=%{INT:source.port})?(?:.*?\\bDPT=%{INT:destination.port})?"
       ignore_failure: true
 
+  # ── iptables direct LOG target (kernel facility) ──────────────────────────────
+  # When the LOG iptables target is used (not NFLOG/ulogd), syslog-ng rewrites
+  # PROGRAM to "UDM-Pro kernel", triggering the double-hostname grok which sets
+  # process.name="kernel" and strips the syslog header.  The remaining message is
+  # already just the payload: "[WAN_LOCAL-D-0] IN=eth8 OUT= MAC=... SRC=..."
+  # This grok parses that pre-stripped payload for state-NEW-only LOG rules that
+  # do not include a DESCR= field.
+  - grok:
+      tag: grok_iptables_kernel_log
+      field: message
+      if: "ctx.process?.name == 'kernel' && ctx.message != null && ctx.message.contains('IN=') && ctx.message.contains('SRC=')"
+      patterns:
+        - "\\[%{DATA:rule.name}\\](?:\\s+DESCR=\"%{DATA:rule.description}\")?\\s+IN=%{DATA:observer.ingress.interface.name}\\s+OUT=%{DATA:observer.egress.interface.name}\\s+(?:MAC=%{DATA:source.mac}\\s+)?SRC=%{IP:source.ip}\\s+DST=%{IP:destination.ip}(?:.*?PROTO=%{WORD:network.transport})?(?:.*?\\bSPT=%{INT:source.port})?(?:.*?\\bDPT=%{INT:destination.port})?"
+      ignore_failure: true
+
   - convert:
       tag: convert_syslog_priority
       field: log.syslog.priority
@@ -66,12 +81,12 @@ processors:
       tag: set_category_iptables_bracket
       field: event.category
       value: network
-      if: "ctx.process?.name == null && ctx.source?.ip != null && ctx.rule?.name != null"
+      if: "(ctx.process?.name == null || ctx.process?.name == 'kernel') && ctx.source?.ip != null && ctx.rule?.name != null"
 
   - script:
       tag: set_action_iptables_bracket
       lang: painless
-      if: "ctx.event?.category == 'network' && ctx.event?.action == null && ctx.rule?.name != null && ctx.source?.ip != null"
+      if: "(ctx.process?.name == null || ctx.process?.name == 'kernel') && ctx.event?.action == null && ctx.rule?.name != null && ctx.source?.ip != null"
       source: |
         String ruleName = ctx.rule.name;
         if (ruleName.contains('-D-') || ruleName.endsWith('-D')) {
@@ -172,6 +187,186 @@ processors:
       pattern: "[\\n\\r\\s]+$"
       replacement: ""
       ignore_missing: true
+
+  # Controller CEF events emitted by UniFi Network 10.x.
+  - grok:
+      tag: grok_unifi_cef
+      field: message
+      if: "ctx.process?.name == null && ctx.message != null && ctx.message.contains(' CEF:')"
+      patterns:
+        - "^(?:<%{NONNEGINT:log.syslog.priority}>)?%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name}(?: %{HOSTNAME})? CEF:%{INT:_tmp.cef.version}\\|%{DATA:observer.vendor}\\|%{DATA:observer.product}\\|%{DATA:observer.version}\\|%{DATA:event.code}\\|%{DATA:event.reason}\\|%{INT:event.severity}\\|%{GREEDYDATA:_tmp.cef.extension}$"
+      ignore_failure: true
+
+  - set:
+      tag: set_process_cef
+      field: process.name
+      value: unifi-network
+      if: "ctx._tmp?.cef?.extension != null"
+
+  - kv:
+      tag: kv_unifi_cef_extension
+      field: _tmp.cef.extension
+      field_split: "\\s(?=[A-Za-z][A-Za-z0-9_]*=)"
+      value_split: "="
+      target_field: _tmp.cef.kv
+      ignore_missing: true
+      ignore_failure: true
+
+  - script:
+      tag: script_map_unifi_cef
+      lang: painless
+      if: "ctx._tmp?.cef?.kv != null"
+      source: |
+        Map kv = ctx._tmp.cef.kv;
+        if (ctx.event == null) { ctx.event = new HashMap(); }
+        ctx.event.kind = 'event';
+        ctx.event.category = 'network';
+
+        if (ctx.event.reason != null) {
+          String reason = ctx.event.reason.toLowerCase();
+          if (reason.contains('roam')) {
+            ctx.event.action = 'wifi_roamed';
+            ctx.event.type = 'change';
+            ctx.event.outcome = 'success';
+          } else if (reason.contains('disconnect') || reason.contains('leave')) {
+            ctx.event.action = 'wifi_disassociated';
+            ctx.event.type = 'connection';
+          } else if (reason.contains('connect') || reason.contains('join') || reason.contains('associate')) {
+            ctx.event.action = 'wifi_associated';
+            ctx.event.type = 'connection';
+            ctx.event.outcome = 'success';
+          }
+        }
+
+        if (kv.containsKey('msg') && kv.msg != null && kv.msg.length() > 0) {
+          ctx.message = kv.msg;
+        }
+
+        if (kv.containsKey('UNIFIclientMac')) {
+          if (ctx.client == null) { ctx.client = new HashMap(); }
+          if (ctx.source == null) { ctx.source = new HashMap(); }
+          ctx.client.mac = kv.UNIFIclientMac;
+          ctx.source.mac = kv.UNIFIclientMac;
+        }
+        if (kv.containsKey('UNIFIclientIp')) {
+          if (ctx.client == null) { ctx.client = new HashMap(); }
+          if (ctx.source == null) { ctx.source = new HashMap(); }
+          ctx.client.ip = kv.UNIFIclientIp;
+          ctx.source.ip = kv.UNIFIclientIp;
+        }
+        if (kv.containsKey('UNIFIclientHostname')) {
+          if (ctx.client == null) { ctx.client = new HashMap(); }
+          ctx.client.hostname = kv.UNIFIclientHostname;
+        }
+        if (kv.containsKey('UNIFIwifiName')) {
+          if (ctx.network == null) { ctx.network = new HashMap(); }
+          ctx.network.name = kv.UNIFIwifiName;
+        }
+        if (kv.containsKey('UNIFIconnectedToDeviceName') || kv.containsKey('UNIFIconnectedToDeviceIp') ||
+            kv.containsKey('UNIFIconnectedToDeviceMac') || kv.containsKey('UNIFIconnectedToDeviceModel') ||
+            kv.containsKey('UNIFIconnectedToDeviceVersion')) {
+          if (ctx.observer == null) { ctx.observer = new HashMap(); }
+          if (kv.containsKey('UNIFIconnectedToDeviceName')) { ctx.observer.name = kv.UNIFIconnectedToDeviceName; }
+          if (kv.containsKey('UNIFIconnectedToDeviceIp')) { ctx.observer.ip = kv.UNIFIconnectedToDeviceIp; }
+          if (kv.containsKey('UNIFIconnectedToDeviceMac')) { ctx.observer.mac = kv.UNIFIconnectedToDeviceMac; }
+          if (kv.containsKey('UNIFIconnectedToDeviceModel')) { ctx.observer.product = kv.UNIFIconnectedToDeviceModel; }
+          if (kv.containsKey('UNIFIconnectedToDeviceVersion')) { ctx.observer.version = kv.UNIFIconnectedToDeviceVersion; }
+        }
+
+  # AP stahtd tracker events contain JSON payloads describing roam/assoc outcomes.
+  - grok:
+      tag: grok_stahtd_json
+      field: message
+      if: "ctx.process?.name == 'stahtd' && ctx.message != null && ctx.message.contains('stahtd_dump_event(): {')"
+      patterns:
+        - "^.*stahtd_dump_event\\(\\): %{GREEDYDATA:_tmp.stahtd.json}$"
+      ignore_failure: true
+
+  - json:
+      tag: json_stahtd_payload
+      field: _tmp.stahtd.json
+      target_field: _tmp.stahtd
+      if: "ctx._tmp?.stahtd?.json != null"
+      ignore_failure: true
+
+  - script:
+      tag: script_map_stahtd
+      lang: painless
+      if: "ctx._tmp?.stahtd != null"
+      source: |
+        Map sta = ctx._tmp.stahtd;
+        if (ctx.event == null) { ctx.event = new HashMap(); }
+        ctx.event.kind = 'event';
+        ctx.event.category = 'network';
+
+        if (sta.containsKey('mac')) {
+          if (ctx.client == null) { ctx.client = new HashMap(); }
+          if (ctx.source == null) { ctx.source = new HashMap(); }
+          ctx.client.mac = sta.mac;
+          ctx.source.mac = sta.mac;
+        }
+
+        String eventType = sta.containsKey('event_type') && sta.event_type != null ? sta.event_type : '';
+        if (eventType == 'sta_roam') {
+          ctx.event.action = 'wifi_roamed';
+          ctx.event.type = 'change';
+          ctx.event.outcome = 'success';
+        } else if (eventType == 'success') {
+          ctx.event.action = 'wifi_associated';
+          ctx.event.type = 'connection';
+          ctx.event.outcome = 'success';
+        } else if (eventType.contains('fail')) {
+          ctx.event.action = 'wifi_auth_failure';
+          ctx.event.outcome = 'failure';
+        }
+
+  # AP wevent custom events carry station join and IP assignment updates.
+  - grok:
+      tag: grok_wevent_custom
+      field: message
+      if: "ctx.message != null && ctx.message.contains('wevent.ubnt_custom_event(): EVENT_STA_')"
+      patterns:
+        - "^:?\\s*wevent\\[%{POSINT:process.pid}\\]: wevent\\.ubnt_custom_event\\(\\): %{WORD:_tmp.wevent.type} %{DATA:_tmp.wevent.vap}: %{MAC:client.mac} / %{IP:client.ip}$"
+        - "^:?\\s*wevent\\[%{POSINT:process.pid}\\]: wevent\\.ubnt_custom_event\\(\\): %{WORD:_tmp.wevent.type} %{DATA:_tmp.wevent.vap}: %{MAC:client.mac} / %{DATA:_tmp.wevent.value}$"
+      ignore_failure: true
+
+  - set:
+      tag: set_process_wevent
+      field: process.name
+      value: wevent
+      if: "ctx._tmp?.wevent?.type != null"
+
+  - script:
+      tag: script_map_wevent
+      lang: painless
+      if: "ctx._tmp?.wevent?.type != null"
+      source: |
+        if (ctx.event == null) { ctx.event = new HashMap(); }
+        ctx.event.kind = 'event';
+        ctx.event.category = 'network';
+
+        if (ctx.client?.mac != null) {
+          if (ctx.source == null) { ctx.source = new HashMap(); }
+          ctx.source.mac = ctx.client.mac;
+        }
+        if (ctx.client?.ip != null) {
+          if (ctx.source == null) { ctx.source = new HashMap(); }
+          ctx.source.ip = ctx.client.ip;
+        }
+
+        String type = ctx._tmp.wevent.type;
+        if (type == 'EVENT_STA_JOIN') {
+          ctx.event.action = 'wifi_associated';
+          ctx.event.type = 'connection';
+          ctx.event.outcome = 'success';
+        } else if (type == 'EVENT_STA_LEAVE') {
+          ctx.event.action = 'wifi_disassociated';
+          ctx.event.type = 'connection';
+        } else if (type == 'EVENT_STA_IP') {
+          ctx.event.action = 'client_ip_assigned';
+          ctx.event.type = 'info';
+          ctx.event.outcome = 'success';
+        }
 
   # ── Classify by process name ──────────────────────────────────────────────────
 
@@ -380,6 +575,13 @@ processors:
   - convert:
       tag: convert_process_pid
       field: process.pid
+      type: long
+      ignore_missing: true
+      ignore_failure: true
+
+  - convert:
+      tag: convert_event_severity
+      field: event.severity
       type: long
       ignore_missing: true
       ignore_failure: true

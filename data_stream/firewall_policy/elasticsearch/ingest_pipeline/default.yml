@@ -29,6 +29,21 @@ processors:
       field: service.name
       value: unifi
 
+  # ── ECS rule.* — copy policy id/name for cross-stream correlation ───────────
+  # Events stream sets rule.name from iptables chain (e.g. WAN_LOCAL-A-10000).
+  # Mapping the same fields here allows joining policy config to hit events.
+  - set:
+      tag: set_rule_id
+      field: rule.id
+      copy_from: unifi.firewall_policy.id
+      ignore_empty_value: true
+
+  - set:
+      tag: set_rule_name
+      field: rule.name
+      copy_from: unifi.firewall_policy.name
+      ignore_empty_value: true
+
   # ── Derive event.action from action type ────────────────────────────────────
   - script:
       tag: set_event_action

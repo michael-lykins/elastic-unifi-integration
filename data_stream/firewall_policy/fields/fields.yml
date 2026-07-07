@@ -43,10 +43,11 @@
     Multi-value field — one entry per MAC.
 
 - name: unifi.firewall_policy.source.ip_addresses
-  type: ip
+  type: keyword
   description: >
     IP addresses or CIDR ranges in the source filter (when filter_type is IP_ADDRESS).
-    Multi-value field — one entry per address/range.
+    Stored as keyword to accommodate both bare IPs (e.g. 192.168.1.1) and CIDR notation
+    (e.g. 10.0.0.0/8). Multi-value field — one entry per address/range.
 
 - name: unifi.firewall_policy.source.ports
   type: keyword
@@ -71,10 +72,11 @@
   description: MAC addresses in the destination filter (when filter_type is MAC_ADDRESS).
 
 - name: unifi.firewall_policy.destination.ip_addresses
-  type: ip
+  type: keyword
   description: >
     IP addresses or CIDR ranges in the destination filter (when filter_type is IP_ADDRESS).
-    Multi-value field — one entry per address/range.
+    Stored as keyword to accommodate both bare IPs (e.g. 192.168.1.1) and CIDR notation
+    (e.g. 10.0.0.0/8). Multi-value field — one entry per address/range.
 
 - name: unifi.firewall_policy.destination.ports
   type: keyword

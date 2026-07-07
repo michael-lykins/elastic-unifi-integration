@@ -1,36 +1,56 @@
 interval: {{interval}}
 program: |
+  // UniFi Network 10.x moved DPI stats from stat/sitedpi (dropped) into
+  // stat/report/daily.gw as a "dpi" sub-object with keys like "185_20-rx_bytes".
+  // Query the last 48 hours to get the most recent daily bucket.
   request("POST",
-    state.url + "/proxy/network/api/s/{{site}}/stat/sitedpi"
+    state.url + "/proxy/network/api/s/{{site}}/stat/report/daily.gw"
   ).with({
     "Header": {
       "X-API-KEY":    ["{{api_key}}"],
       "Content-Type": ["application/json"],
       "Accept":       ["application/json"]
     },
-    "Body": bytes("{\"type\":\"by_app\"}")
+    "Body": bytes(
+      "{\"attrs\":[\"dpi\"],\"start\":" + string((int(now) - 172800) * 1000) +
+      ",\"end\":"                        + string(int(now) * 1000) + "}"
+    )
   }).do_request().as(resp, resp.StatusCode == 200 ?
     bytes(resp.Body).decode_json().data.filter(
-      d, (has(d.rx_bytes) && int(d.rx_bytes) > 0) || (has(d.tx_bytes) && int(d.tx_bytes) > 0)
-    ).as(rows,
-      {
-        "events": rows.map(d, {
-          "metrics": {
-            "unifi": {
-              "dpi": {
-                "app":      has(d.app)      ? string(d.app)      : "",
-                "cat":      has(d.cat)      ? string(d.cat)      : "",
-                "tx_bytes": has(d.tx_bytes) ? int(d.tx_bytes)    : 0,
-                "rx_bytes": has(d.rx_bytes) ? int(d.rx_bytes)    : 0,
-                "clients":  has(d.clients)  ? int(d.clients)     : 0
-              }
-            }
-          },
-          "event":   {"dataset": "unifi.dpi", "module": "unifi"},
-          "service": {"name": "unifi"}
-        }),
-        "want_more": false
-      }
+      d, has(d.dpi) && size(d.dpi) > 2
+    ).as(dpi_docs,
+      size(dpi_docs) == 0 ?
+        {"events": [], "want_more": false}
+      :
+        dpi_docs[size(dpi_docs) - 1].dpi.as(dpi,
+          dpi.filter(k, k.matches("^[0-9]+_[0-9]+-rx_bytes$")).map(rx_key,
+            string(rx_key).as(rk,
+              rk.split("_")[0].as(app_id,
+                rk.split("_")[1].split("-")[0].as(cat_id,
+                  (app_id + "_" + cat_id + "-tx_bytes").as(tx_key,
+                    {
+                      "metrics": {
+                        "unifi": {
+                          "dpi": {
+                            "app":      app_id,
+                            "cat":      cat_id,
+                            "rx_bytes": rk in dpi ? int(dpi[rk]) : 0,
+                            "tx_bytes": tx_key in dpi ? int(dpi[tx_key]) : 0,
+                            "clients":  0
+                          }
+                        }
+                      },
+                      "event":   {"dataset": "unifi.dpi", "module": "unifi"},
+                      "service": {"name": "unifi"}
+                    }
+                  )
+                )
+              )
+            )
+          ).as(events,
+            {"events": events, "want_more": false}
+          )
+        )
     )
   :
     {

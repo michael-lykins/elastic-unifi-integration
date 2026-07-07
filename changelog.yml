@@ -1,3 +1,86 @@
+- version: "0.9.2"
+  changes:
+    - description: >
+        Improve UniFi syslog ECS parsing for structured controller and AP events.
+        Controller CEF records now extract event code/severity/reason plus client,
+        WiFi, and connected-device context. AP stahtd tracker JSON and wevent
+        custom events now populate ECS network fields and actions instead of
+        falling through as unparsed host logs.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
+- version: "0.9.1"
+  changes:
+    - description: >
+        Fix firewall policy collection when UniFi policies omit the id field.
+        The CEL template now safely falls back to an empty string instead of
+        failing decode for those rules.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
+- version: "0.9.0"
+  changes:
+    - description: >
+        Rebuild Clients dashboard using metrics-unifi.client-* as the primary data
+        source instead of fragile DHCP syslog parsing. New layout: six live KPIs
+        (Total, Wireless, Wired, Active SSIDs, Avg Signal dBm, Avg Satisfaction),
+        Connected Clients Over Time stacked area (wired/wireless split), Wired vs
+        Wireless donut, Clients by SSID / Network / Manufacturer bar charts, WiFi
+        Signal Quality bucket chart, Clients by Radio Band (5 GHz vs 2.4 GHz), and
+        a full All Connected Clients datatable with hostname, MAC, IP, OUI, network,
+        SSID, signal, satisfaction, RX/TX bytes, uptime, and wired flag.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/29
+- version: "0.8.9"
+  changes:
+    - description: >
+        Rethink Firewall dashboard — replace WAN attack-monitoring panels (WAN Events,
+        SSH/ICMP/RDP probes, Top Attacking IPs, Protocol Distribution, Attack Types)
+        with policy-focused panels: six policy KPIs (total, user-defined, system, logging,
+        enabled, disabled), Rule Hit Activity bar chart, Firewall Events Over Time area
+        chart, and a full All Policies datatable. Fix ES|QL LIKE "firewall%" operator
+        (returns 0 in this Kibana version) — replace with STARTS_WITH() throughout.
+        Add Firewall Activity section to Overview dashboard (Blocked Events, Accepted
+        Events KPIs, events timeline, Top Targeted Ports). Add firewall_policy_interval
+        variable (default 5m) so firewall policy polling is independent of the 60s device
+        metrics interval, reducing document volume from ~90k/day to ~18k/day.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/28
+- version: "0.8.8"
+  changes:
+    - description: >
+        Fix firewall event parsing for iptables LOG target (kernel facility). When the
+        direct iptables LOG target is used instead of NFLOG/ulogd, syslog-ng rewrites
+        PROGRAM to "UDM-Pro kernel" causing the double-hostname grok to fire and set
+        process.name="kernel" with the syslog header already stripped. The bracket
+        grok was skipped because it only fired when process.name==null. Add a new
+        grok_iptables_kernel_log path for the pre-stripped payload format and update
+        set_category and set_action conditions to include process.name=="kernel".
+        Also adds persistent iptables LOG rule on UDM-Pro (state NEW only) and
+        syslog-ng IDS threat forwarding to Elastic.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/27
+- version: "0.8.7"
+  changes:
+    - description: >
+        Fix Firewall dashboard — all 11 event panels were filtering on
+        event.category == "firewall" (the pre-ECS value removed in 0.8.3). After
+        the ECS fix, firewall events correctly use event.category = "network", so
+        the old filter matched nothing in recent data. Panels now filter on
+        event.action LIKE "firewall%" which matches firewall_accept, firewall_block,
+        and firewall_reject regardless of category value.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/26
+- version: "0.8.6"
+  changes:
+    - description: >
+        ECS compliance fixes for firewall_policy data stream. (1) Change
+        source.ip_addresses and destination.ip_addresses from ip to keyword type —
+        ip type rejects CIDR notation (e.g. 10.0.0.0/8) which UniFi rules can use;
+        keyword safely stores both bare IPs and CIDR ranges. (2) Add ECS rule.id and
+        rule.name fields mapped from unifi.firewall_policy.id and .name respectively,
+        enabling cross-stream correlation between policy config snapshots and iptables
+        hit events in logs-unifi.events-*.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/issues/25
 - version: "0.8.5"
   changes:
     - description: >

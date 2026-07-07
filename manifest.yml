@@ -1,7 +1,7 @@
 format_version: 3.2.2
 name: unifi
 title: UniFi
-version: 0.8.5
+version: 0.9.2
 description: >
   Monitor UniFi network devices using the UniFi Network Local API and syslog.
   Collects per-device metrics (WAN stats, uplink latency, speedtest results,
@@ -70,8 +70,16 @@ policy_templates:
           - name: interval
             type: text
             title: Collection Interval
-            description: How often to poll the UniFi API (e.g. 60s, 1m, 5m).
+            description: How often to poll the UniFi API for device metrics (e.g. 60s, 1m, 5m).
             default: 60s
+            required: true
+          - name: firewall_policy_interval
+            type: text
+            title: Firewall Policy Collection Interval
+            description: >
+              How often to poll for firewall rule configuration. Configuration data changes
+              rarely — 5m or longer is recommended to avoid excessive document volume.
+            default: 5m
             required: true
       - type: udp
         title: UniFi Syslog (UDP)

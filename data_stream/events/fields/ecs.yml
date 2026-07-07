@@ -9,9 +9,17 @@
 - external: ecs
   name: event.action
 - external: ecs
+  name: event.code
+- external: ecs
+  name: event.reason
+- external: ecs
+  name: event.severity
+- external: ecs
   name: host.name
 - external: ecs
   name: process.name
+- external: ecs
+  name: process.command_line
 - external: ecs
   name: process.pid
 - external: ecs
@@ -31,6 +39,8 @@
 - external: ecs
   name: network.bytes
 - external: ecs
+  name: network.name
+- external: ecs
   name: service.name
 - external: ecs
   name: log.syslog.priority
@@ -43,9 +53,19 @@
 - external: ecs
   name: rule.description
 - external: ecs
+  name: observer.name
+- external: ecs
   name: observer.mac
 - external: ecs
+  name: observer.ip
+- external: ecs
+  name: observer.vendor
+- external: ecs
   name: observer.product
+- external: ecs
+  name: observer.version
+- external: ecs
+  name: user.name
 - external: ecs
   name: user.target.name
 - external: ecs

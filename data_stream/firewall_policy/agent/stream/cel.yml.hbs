@@ -1,4 +1,4 @@
-interval: {{interval}}
+interval: {{firewall_policy_interval}}
 program: |
   // Each collection interval makes three sequential requests:
   //   1. GET /sites              → resolve the UDM-Pro site UUID
@@ -55,7 +55,7 @@ program: |
                 {
                   "unifi": {
                     "firewall_policy": {
-                      "id":      p.id,
+                      "id":      has(p.id) ? p.id : "",
                       "name":    has(p.name) ? string(p.name) : "",
                       "enabled": p.enabled,
                       "index":   int(p.index),
