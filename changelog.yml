@@ -1,3 +1,20 @@
+- version: "0.9.4"
+  changes:
+    - description: >
+        Enrich the UniFi Network Topology map (Vega panel) with live host
+        stats: CPU % and memory % on every device card, WAN latency on the
+        gateway card, and total PoE draw on the core switch card. Also adds
+        an overflow indicator ("+N more") beneath an AP's wireless client
+        list when it has more clients than the 4-box display cap.
+
+        The topology's node/edge layout (which devices exist, how they're
+        wired) is still a hand-maintained static list — this release only
+        adds live metrics on top of the existing structure. A follow-up is
+        planned to derive the node/edge graph itself from live LLDP
+        neighbor and MAC-table data (metrics-unifi.snmp-default) so new
+        devices appear automatically instead of requiring a manual edit.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.3"
   changes:
     - description: >
