@@ -1,3 +1,28 @@
+- version: "0.9.3"
+  changes:
+    - description: >
+        Add UniFi WiFi Health and UniFi Gateway & Switch Health dashboards.
+        WiFi Health covers per-radio channel utilization (with other-BSS
+        interference breakdown), per-SSID client/throughput/retry detail, and
+        AP CPU/memory/load. Gateway & Switch Health covers fleet CPU/memory
+        across all devices, UDM-Pro temperatures, gateway TCP health and
+        scan/probe signals, per-port PoE draw, LLDP-based switch port map,
+        MAC-table clients-per-port, controller subsystem health, and IPS/alarm
+        summaries. Both dashboards join the shared UniFi navigation strip
+        (now 9 tabs) and use the same service.name: unifi pinned filter as
+        the rest of the package. All Lens panels use the package's standard
+        ES|QL + adHocDataViews + BUCKET(@timestamp, ...) pattern for correct
+        time-range behavior.
+
+        Data dependency: both dashboards read from metrics-unifi.snmp-default
+        and metrics-unifi.api-default, which are populated by the standalone
+        Logstash SNMP and API-route pipelines (unifi-snmp-gateway.conf,
+        unifi-snmp-ap.conf, unifi-snmp-switch.conf, unifi-api.conf) rather
+        than this package's own CEL/syslog inputs. Installing this package
+        alone will not populate them — the Logstash pipelines must be
+        deployed separately (see README).
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.2"
   changes:
     - description: >
