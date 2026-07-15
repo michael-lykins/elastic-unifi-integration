@@ -1,3 +1,46 @@
+- version: "0.9.5"
+  changes:
+    - description: >
+        Replace the Topology map's hand-maintained static node/edge list with
+        one derived from live LLDP neighbor data (metrics-unifi.snmp-default,
+        snmp.entity_type: lldp_neighbor). The switch self-reports its
+        neighbors per port; the diagram now builds its device list from
+        metrics-unifi.device-default (the canonical "what devices exist"
+        source) and classifies each one's role (Gateway/Core Switch/Access
+        Point/Switch) from observer.type plus whether it matches the LLDP
+        reporting device. New devices plugged into the switch will now
+        appear automatically instead of requiring a manual spec edit.
+        LLDP hostnames don't match the pretty device names used elsewhere
+        (e.g. "BasementAP" vs "Basement AP"), so both sides are normalized
+        (lowercased, spaces/hyphens stripped) before joining.
+
+        Also removed the top-4-per-AP wireless client display cap. Every
+        AP's client list now renders in full, with each AP's own block of
+        vertical space sized dynamically from its real client count (a
+        cumulative-stacking calculation across Vega window transforms) so
+        a 14-client AP and a 2-client switch no longer collide. Client rows
+        were compacted to a single combined line (hostname + signal dB)
+        to keep total panel height reasonable at real client counts.
+
+        Fixed a card sizing bug where the CPU/Mem/WAN/PoE text row (added
+        in 0.9.4) rendered 3px below the card's own bottom border.
+
+        Implementation note: two non-obvious Vega gotchas hit during this
+        rebuild, both worth remembering — (1) mixing row_number and a
+        frame-restricted sum in one window transform silently produces
+        wrong results; use separate window transforms. (2) Vega's window
+        "frame" takes the absolute value of both boundaries, so a negative
+        end offset (e.g. frame:[null,-1], intended as "exclude current
+        row") is NOT equivalent to "look backward" — it gets treated as
+        +1 (look one row ahead) instead. The correct pattern for a
+        running total excluding the current row is an inclusive sum
+        followed by subtracting the current row's own value. Both bugs
+        were caught by installing vega locally and running the actual
+        spec's dataflow against live query results outside Kibana, rather
+        than iterating through the Kibana UI — a much faster verification
+        loop for Vega work going forward.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.4"
   changes:
     - description: >
