@@ -1,0 +1,52 @@
+# ECS observer fields — UniFi Protect cameras are observers in ECS terminology
+- name: observer.name
+  type: keyword
+  description: Camera name as configured in UniFi Protect.
+
+- name: observer.product
+  type: keyword
+  description: Camera model key (e.g. camera).
+
+- name: observer.type
+  type: keyword
+  description: Always "camera" for this data stream.
+
+- name: observer.mac
+  type: keyword
+  description: MAC address of the camera.
+
+- name: unifi.protect_camera.id
+  type: keyword
+  description: UniFi Protect internal camera ID.
+
+- name: unifi.protect_camera.model_key
+  type: keyword
+  description: UniFi Protect model key for this device (camera).
+
+- name: unifi.protect_camera.state
+  type: keyword
+  description: Connection state as reported by Protect (e.g. CONNECTED, DISCONNECTED).
+
+- name: unifi.protect_camera.connected
+  type: boolean
+  description: True when state is CONNECTED.
+
+- name: unifi.protect_camera.mic_enabled
+  type: boolean
+  description: Whether the camera's microphone is enabled.
+
+- name: unifi.protect_camera.hdr_type
+  type: keyword
+  description: HDR mode configured on the camera (e.g. auto, on, off).
+
+- name: unifi.protect_camera.video_mode
+  type: keyword
+  description: Video mode configured on the camera (e.g. default, highFps).
+
+- name: unifi.protect_camera.has_package_camera
+  type: boolean
+  description: Whether this camera has an attached package-detection sub-camera.
+
+- name: unifi.protect_camera.smart_detect_types
+  type: keyword
+  description: Smart detection object types this camera supports (e.g. person, vehicle, animal).

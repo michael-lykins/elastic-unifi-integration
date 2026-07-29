@@ -1,0 +1,11 @@
+title: UniFi Protect Cameras
+type: logs
+streams:
+  - input: cel
+    title: UniFi Protect Cameras
+    description: >
+      Camera inventory and configuration snapshot from the UniFi Protect
+      Integration API. Capability/config data only (connection state, mic,
+      HDR, smart-detect capabilities) — no live bitrate/storage/uptime stats
+      are exposed by this API.
+    template_path: cel.yml.hbs

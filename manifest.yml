@@ -1,7 +1,7 @@
 format_version: 3.2.2
 name: unifi
 title: UniFi
-version: 0.9.12
+version: 0.9.13
 description: >
   Monitor UniFi network devices using the UniFi Network Local API and syslog.
   Collects per-device metrics (WAN stats, uplink latency, speedtest results,
@@ -79,6 +79,15 @@ policy_templates:
             description: >
               How often to poll for firewall rule configuration. Configuration data changes
               rarely — 5m or longer is recommended to avoid excessive document volume.
+            default: 5m
+            required: true
+          - name: protect_interval
+            type: text
+            title: UniFi Protect Collection Interval
+            description: >
+              How often to poll UniFi Protect (cameras, NVR, accessories) via the same
+              UDM-Pro/UDM-SE and API key as the Network API. Protect data is
+              capability/config only and changes rarely — 5m or longer is recommended.
             default: 5m
             required: true
       - type: udp

@@ -1,0 +1,55 @@
+interval: {{protect_interval}}
+program: |
+  request("GET",
+    state.url + "/proxy/protect/integration/v1/cameras"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    {
+      "events": bytes(resp.Body).decode_json().map(camera, {
+        "observer": {
+          "name":    has(camera.name) ? string(camera.name) : "",
+          "product": has(camera.modelKey) ? string(camera.modelKey) : "",
+          "type":    "camera",
+          "mac":     has(camera.mac) ? string(camera.mac) : ""
+        },
+        "host": {
+          "name": has(camera.name) ? string(camera.name) : ""
+        },
+        "unifi": {
+          "protect_camera": {
+            "id":                  has(camera.id)      ? string(camera.id)      : "",
+            "model_key":           has(camera.modelKey) ? string(camera.modelKey) : "",
+            "state":               has(camera.state)   ? string(camera.state)   : "",
+            "connected":           has(camera.state) && camera.state == "CONNECTED",
+            "mic_enabled":         has(camera.isMicEnabled) ? camera.isMicEnabled : false,
+            "hdr_type":            has(camera.hdrType) ? string(camera.hdrType) : "",
+            "video_mode":          has(camera.videoMode) ? string(camera.videoMode) : "",
+            "has_package_camera":  has(camera.hasPackageCamera) ? camera.hasPackageCamera : false,
+            "smart_detect_types":  (has(camera.featureFlags) && has(camera.featureFlags.smartDetectTypes))
+                                    ? camera.featureFlags.smartDetectTypes.map(t, string(t)) : []
+          }
+        },
+        "event": {
+          "dataset": "unifi.protect_camera",
+          "module":  "unifi"
+        },
+        "service": {"name": "unifi"}
+      })
+    }
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-protect-camera
+  - forwarded

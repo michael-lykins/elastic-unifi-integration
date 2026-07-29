@@ -1,0 +1,49 @@
+interval: {{protect_interval}}
+program: |
+  request("GET",
+    state.url + "/proxy/protect/integration/v1/nvrs"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    bytes(resp.Body).decode_json().as(nvr, {
+      "events": [{
+        "observer": {
+          "name":    has(nvr.name) ? string(nvr.name) : "",
+          "product": has(nvr.modelKey) ? string(nvr.modelKey) : "",
+          "type":    "nvr"
+        },
+        "host": {
+          "name": has(nvr.name) ? string(nvr.name) : ""
+        },
+        "unifi": {
+          "protect_nvr": {
+            "id":                       has(nvr.id)       ? string(nvr.id)       : "",
+            "model_key":                has(nvr.modelKey) ? string(nvr.modelKey) : "",
+            "arm_status":               (has(nvr.armMode) && has(nvr.armMode.status)) ? string(nvr.armMode.status) : "",
+            "doorbell_default_message": (has(nvr.doorbellSettings) && has(nvr.doorbellSettings.defaultMessageText))
+                                         ? string(nvr.doorbellSettings.defaultMessageText) : ""
+          }
+        },
+        "event": {
+          "dataset": "unifi.protect_nvr",
+          "module":  "unifi"
+        },
+        "service": {"name": "unifi"}
+      }]
+    })
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-protect-nvr
+  - forwarded

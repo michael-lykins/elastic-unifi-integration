@@ -1,0 +1,13 @@
+title: UniFi Protect Accessories
+type: logs
+streams:
+  - input: cel
+    title: UniFi Protect Accessories
+    description: >
+      Combined inventory snapshot for UniFi Protect sensors, lights, chimes,
+      and viewers from the UniFi Protect Integration API. `unifi.protect_accessory.model_key`
+      identifies the accessory type (sensor, light, chime, viewer). Only
+      identity/state fields are extracted — no accessories were available in
+      this environment to verify type-specific fields against, so extend as
+      needed if you own these device types.
+    template_path: cel.yml.hbs

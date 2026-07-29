@@ -1,0 +1,81 @@
+interval: {{protect_interval}}
+program: |
+  // Sequential requests across the four low-population Protect accessory
+  // endpoints, concatenated into one event set. model_key (from each API's
+  // own payload) identifies which accessory type a given document is.
+  request("GET",
+    state.url + "/proxy/protect/integration/v1/sensors"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(sensors_resp,
+    (sensors_resp.StatusCode == 200 ? bytes(sensors_resp.Body).decode_json() : []).as(sensors,
+      request("GET",
+        state.url + "/proxy/protect/integration/v1/lights"
+      ).with({
+        "Header": {
+          "X-API-KEY": ["{{api_key}}"],
+          "Accept":    ["application/json"]
+        }
+      }).do_request().as(lights_resp,
+        (lights_resp.StatusCode == 200 ? bytes(lights_resp.Body).decode_json() : []).as(lights,
+          request("GET",
+            state.url + "/proxy/protect/integration/v1/chimes"
+          ).with({
+            "Header": {
+              "X-API-KEY": ["{{api_key}}"],
+              "Accept":    ["application/json"]
+            }
+          }).do_request().as(chimes_resp,
+            (chimes_resp.StatusCode == 200 ? bytes(chimes_resp.Body).decode_json() : []).as(chimes,
+              request("GET",
+                state.url + "/proxy/protect/integration/v1/viewers"
+              ).with({
+                "Header": {
+                  "X-API-KEY": ["{{api_key}}"],
+                  "Accept":    ["application/json"]
+                }
+              }).do_request().as(viewers_resp,
+                (viewers_resp.StatusCode == 200 ? bytes(viewers_resp.Body).decode_json() : []).as(viewers,
+                  (sensors + lights + chimes + viewers).map(a, {
+                    "observer": {
+                      "name":    has(a.name)    ? string(a.name)    : "",
+                      "product": has(a.modelKey) ? string(a.modelKey) : "",
+                      "type":    has(a.modelKey) ? string(a.modelKey) : "",
+                      "mac":     has(a.mac)     ? string(a.mac)     : ""
+                    },
+                    "host": {
+                      "name": has(a.name) ? string(a.name) : ""
+                    },
+                    "unifi": {
+                      "protect_accessory": {
+                        "id":        has(a.id)       ? string(a.id)       : "",
+                        "model_key": has(a.modelKey) ? string(a.modelKey) : "",
+                        "state":     has(a.state)    ? string(a.state)    : ""
+                      }
+                    },
+                    "event": {
+                      "dataset": "unifi.protect_accessory",
+                      "module":  "unifi"
+                    },
+                    "service": {"name": "unifi"}
+                  }).as(events,
+                    {"events": events, "want_more": false}
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-protect-accessory
+  - forwarded

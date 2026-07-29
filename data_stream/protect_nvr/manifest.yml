@@ -1,0 +1,9 @@
+title: UniFi Protect NVR
+type: logs
+streams:
+  - input: cel
+    title: UniFi Protect NVR
+    description: >
+      NVR (UDM-Pro Protect controller) configuration snapshot from the
+      UniFi Protect Integration API — arm mode and doorbell settings.
+    template_path: cel.yml.hbs

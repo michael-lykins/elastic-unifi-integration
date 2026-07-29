@@ -1,0 +1,28 @@
+# ECS observer fields — the Protect NVR (UDM-Pro controller) is an observer in ECS terminology
+- name: observer.name
+  type: keyword
+  description: NVR name as configured in UniFi Protect.
+
+- name: observer.product
+  type: keyword
+  description: NVR model key (e.g. nvr).
+
+- name: observer.type
+  type: keyword
+  description: Always "nvr" for this data stream.
+
+- name: unifi.protect_nvr.id
+  type: keyword
+  description: UniFi Protect internal NVR ID.
+
+- name: unifi.protect_nvr.model_key
+  type: keyword
+  description: UniFi Protect model key for this device (nvr).
+
+- name: unifi.protect_nvr.arm_status
+  type: keyword
+  description: Protect "Armed for Away" status (e.g. disabled, armed).
+
+- name: unifi.protect_nvr.doorbell_default_message
+  type: keyword
+  description: Default LCD message configured on Protect doorbells for this NVR.

@@ -1,0 +1,30 @@
+# ECS observer fields — UniFi Protect accessories are observers in ECS terminology
+- name: observer.name
+  type: keyword
+  description: Accessory name as configured in UniFi Protect.
+
+- name: observer.product
+  type: keyword
+  description: Accessory model key (sensor, light, chime, or viewer).
+
+- name: observer.type
+  type: keyword
+  description: Accessory type (sensor, light, chime, or viewer) — mirrors model_key.
+
+- name: observer.mac
+  type: keyword
+  description: MAC address of the accessory.
+
+- name: unifi.protect_accessory.id
+  type: keyword
+  description: UniFi Protect internal ID for this accessory.
+
+- name: unifi.protect_accessory.model_key
+  type: keyword
+  description: >
+    UniFi Protect model key identifying the accessory type: sensor, light,
+    chime, or viewer.
+
+- name: unifi.protect_accessory.state
+  type: keyword
+  description: Connection state as reported by Protect (e.g. CONNECTED, DISCONNECTED).

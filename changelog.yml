@@ -1,3 +1,32 @@
+- version: "0.9.13"
+  changes:
+    - description: >
+        Add UniFi Protect support: three new CEL data streams polling the
+        UniFi Protect Integration API (same UDM-Pro host and API key as the
+        existing Network API input, no new credentials needed).
+        protect_camera and protect_nvr are verified live against real
+        hardware (3 cameras, 1 NVR) and expose capability/config data only --
+        connection state, mic/HDR/video-mode settings, smart-detect
+        capability list for cameras; arm status and doorbell defaults for
+        the NVR. There are no live bitrate/storage/uptime stats available
+        through this API for cameras. protect_accessory combines sensors,
+        lights, chimes, and viewers into a single stream (sequential
+        chained requests, same pattern already proven safe in
+        firewall_policy's multi-request CEL program) since none of these
+        accessory types exist in this environment to verify field shapes
+        against -- only common identity/state fields (id, model_key, name,
+        mac, state) are extracted; extend if you own these device types.
+        Explicitly NOT implemented: Protect motion/smart-detect events.
+        Those are only available via a legacy WebSocket channel
+        (/proxy/protect/ws/updates) gated by UI session-cookie auth, not
+        the integration API key -- confirmed via direct 404s against every
+        plausible REST events endpoint. That's incompatible with Elastic
+        Agent's stateless CEL polling model and would need a persistent
+        WebSocket client (like a second unifi_client.py-style script) if
+        ever pursued -- tracked as a separate, harder problem, not an
+        oversight.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.12"
   changes:
     - description: >
