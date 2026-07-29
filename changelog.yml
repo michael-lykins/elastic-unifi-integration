@@ -1,3 +1,45 @@
+- version: "0.9.7"
+  changes:
+    - description: >
+        The `device` data stream's CEL/ingest-pipeline collection was built
+        before the legacy Logstash unifi-api pipeline's full field coverage
+        had been ported over, so it was missing several metrics dashboards
+        and users actually depend on for device health: CPU %, memory %,
+        1/5/15-minute load averages, memory bytes, and (UDM-Pro only) the
+        CPU/Local/PHY temperature sensors and Temporary/Backup storage
+        partition usage. This release closes that gap so
+        metrics-unifi.device-default reaches parity with metrics-unifi.api-default
+        for these fields, clearing the way to eventually retire the old
+        Logstash pipeline.
+
+        CPU/memory %  and the load averages arrive from the UniFi API as
+        strings that may have leading/trailing padding (e.g. "  2.5") — the
+        CEL script passes them through as strings and relies on
+        Elasticsearch's default numeric coercion (which trims, the same as
+        Java's Float.parseFloat) rather than fighting CEL for a trim
+        function.
+
+        The temperature sensor array and storage partition array can't be
+        expanded into dynamically-named fields (temp_cpu_c, temp_local_c,
+        storage.temporary.*, storage.backup.*) directly in CEL — map
+        literals require statically-known keys, and nothing else in this
+        package's CEL scripts builds keys from array contents at runtime.
+        The CEL script now passes both arrays through as-is into staging
+        fields, and two new Painless script processors in the device
+        ingest pipeline do the per-item expansion (mirroring what the old
+        Logstash pipeline did in Ruby) before the staging fields are
+        removed.
+
+        Deliberately deferred to a follow-up: per-port PoE breakdown
+        (would need a genuinely new nested-array-flattening CEL pattern —
+        parent device array, each with its own child port array — that
+        this package has no existing precedent for), and repointing the
+        3 dashboards still reading from the old metrics-unifi.api-default
+        dataset (unifi-health-dashboard.json, unifi-topology-dashboard.json,
+        and unifi-gsw-health.json, the last of which alone has 72 ES|QL
+        queries to rewrite).
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.5"
   changes:
     - description: >

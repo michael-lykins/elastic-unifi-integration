@@ -49,6 +49,35 @@
   type: integer
   description: Number of wireless/wired clients currently associated with this device.
 
+# Health metrics (all devices)
+- name: metrics.unifi.device.cpu_pct
+  type: float
+  description: Device CPU utilization percentage.
+
+- name: metrics.unifi.device.memory_pct
+  type: float
+  description: Device memory utilization percentage.
+
+- name: metrics.unifi.device.load_1m
+  type: float
+  description: 1-minute system load average.
+
+- name: metrics.unifi.device.load_5m
+  type: float
+  description: 5-minute system load average.
+
+- name: metrics.unifi.device.load_15m
+  type: float
+  description: 15-minute system load average.
+
+- name: metrics.unifi.device.memory_total_bytes
+  type: long
+  description: Total device memory in bytes.
+
+- name: metrics.unifi.device.memory_used_bytes
+  type: long
+  description: Used device memory in bytes.
+
 # Switch-specific
 - name: metrics.unifi.device.temperature_c
   type: float
@@ -141,3 +170,41 @@
 - name: metrics.unifi.device.speedtest.up_mbps
   type: float
   description: Upload throughput from the last speed test in Mbps.
+
+# Temperature sensors (UDM-Pro only)
+- name: metrics.unifi.device.temp_cpu_c
+  type: float
+  description: CPU temperature in degrees Celsius. Gateway devices only.
+
+- name: metrics.unifi.device.temp_local_c
+  type: float
+  description: Local board temperature in degrees Celsius. Gateway devices only.
+
+- name: metrics.unifi.device.temp_phy_c
+  type: float
+  description: PHY temperature in degrees Celsius. Gateway devices only.
+
+# Storage partitions (UDM-Pro only)
+- name: metrics.unifi.device.storage.temporary.used_bytes
+  type: long
+  description: Used bytes on the temporary storage partition. Gateway devices only.
+
+- name: metrics.unifi.device.storage.temporary.size_bytes
+  type: long
+  description: Total size in bytes of the temporary storage partition. Gateway devices only.
+
+- name: metrics.unifi.device.storage.temporary.used_pct
+  type: float
+  description: Percentage of the temporary storage partition in use. Gateway devices only.
+
+- name: metrics.unifi.device.storage.backup.used_bytes
+  type: long
+  description: Used bytes on the backup storage partition. Gateway devices only.
+
+- name: metrics.unifi.device.storage.backup.size_bytes
+  type: long
+  description: Total size in bytes of the backup storage partition. Gateway devices only.
+
+- name: metrics.unifi.device.storage.backup.used_pct
+  type: float
+  description: Percentage of the backup storage partition in use. Gateway devices only.

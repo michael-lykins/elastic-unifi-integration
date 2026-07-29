@@ -49,6 +49,81 @@ processors:
       if: ctx.metrics?.unifi?.device?.speedtest?.up_mbps == 0
       ignore_missing: true
 
+  # Expand the UDM-Pro temperature sensor array (name/value pairs, e.g.
+  # CPU/Local/PHY) into named metrics.unifi.device.temp_<sensor>_c fields.
+  # CEL can't build dynamically-named map keys from array contents, so the
+  # CEL script passes the raw array through and this pipeline does the
+  # per-sensor expansion instead.
+  - script:
+      tag: expand_temperature_sensors
+      if: ctx.unifi?.device?.temperatures_raw != null && !ctx.unifi.device.temperatures_raw.isEmpty()
+      source: >-
+        for (t in ctx.unifi.device.temperatures_raw) {
+          if (t.name != null && t.value != null) {
+            String lower = t.name.toString().toLowerCase();
+            StringBuilder sb = new StringBuilder();
+            boolean lastWasSep = false;
+            for (int i = 0; i < lower.length(); i++) {
+              String ch = lower.substring(i, i + 1);
+              if ('abcdefghijklmnopqrstuvwxyz0123456789'.indexOf(ch) >= 0) {
+                sb.append(ch);
+                lastWasSep = false;
+              } else if (!lastWasSep) {
+                sb.append('_');
+                lastWasSep = true;
+              }
+            }
+            String sensor = sb.toString();
+            ctx.metrics.unifi.device['temp_' + sensor + '_c'] = t.value;
+          }
+        }
+
+  # Expand the UDM-Pro storage partition array (name/used/size, e.g.
+  # Temporary/Backup) into metrics.unifi.device.storage.<partition>.* fields.
+  # Same dynamic-key limitation as above — expanded here instead of in CEL.
+  - script:
+      tag: expand_storage_partitions
+      if: ctx.unifi?.device?.storage_raw != null && !ctx.unifi.device.storage_raw.isEmpty()
+      source: >-
+        if (ctx.metrics.unifi.device.storage == null) { ctx.metrics.unifi.device.storage = new HashMap(); }
+        for (s in ctx.unifi.device.storage_raw) {
+          if (s.name != null) {
+            String lower = s.name.toString().toLowerCase();
+            StringBuilder sb = new StringBuilder();
+            boolean lastWasSep = false;
+            for (int i = 0; i < lower.length(); i++) {
+              String ch = lower.substring(i, i + 1);
+              if ('abcdefghijklmnopqrstuvwxyz0123456789'.indexOf(ch) >= 0) {
+                sb.append(ch);
+                lastWasSep = false;
+              } else if (!lastWasSep) {
+                sb.append('_');
+                lastWasSep = true;
+              }
+            }
+            String pname = sb.toString();
+            long used = s.used != null ? (long) s.used : 0L;
+            long size = s.size != null ? (long) s.size : 0L;
+            Map part = new HashMap();
+            part.put('used_bytes', used);
+            part.put('size_bytes', size);
+            if (size > 0) {
+              part.put('used_pct', Math.round((used / (double) size) * 1000.0) / 10.0);
+            }
+            ctx.metrics.unifi.device.storage[pname] = part;
+          }
+        }
+
+  - remove:
+      tag: remove_temperatures_raw
+      field: unifi.device.temperatures_raw
+      ignore_missing: true
+
+  - remove:
+      tag: remove_storage_raw
+      field: unifi.device.storage_raw
+      ignore_missing: true
+
 on_failure:
   - append:
       field: error.message
