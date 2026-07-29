@@ -78,6 +78,7 @@
   type: long
   description: Used device memory in bytes.
 
+
 # Switch-specific
 - name: metrics.unifi.device.temperature_c
   type: float

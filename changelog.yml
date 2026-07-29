@@ -1,3 +1,33 @@
+- version: "0.9.11"
+  changes:
+    - description: >
+        Firmware/release-note audit: the UDM-Pro was upgraded (UniFi OS
+        5.1.19 -> 5.1.26, bundling Network App 10.4.57 -> 10.5.67). Nothing
+        new found in SNMP or syslog/CEF, but Network App 10.5's new "Rule
+        Hit Statistics" feature exposes a real, live field on the gateway:
+        `firewall_hits_state.entries` (per-chain, per-rule packet counters
+        with last-hit timestamps).
+
+        Investigated adding this as metrics.unifi.device.firewall_hits, but
+        deferred it after finding a reproducible runtime issue: any
+        non-empty version of this array (mapped via nested `.map()` in CEL,
+        via raw passthrough + ingest-pipeline foreach/rename, as `nested`,
+        as a plain `object` group, filtered to exclude suspicious values,
+        even truncated with `.slice(0, 10)`) silently broke polling for the
+        UDM-Pro specifically -- every other device kept getting fresh
+        documents every interval while the gateway's stopped entirely, with
+        no error surfaced anywhere in the agent logs beyond a generic
+        "events were dropped" warning. A single hardcoded one-entry array
+        worked fine, and the exact same real 26-entry document indexed
+        without issue through `_bulk` and `_ingest/pipeline/_simulate` by
+        hand -- so this isn't a document-content or mapping problem, it's
+        something in how the live CEL/filebeat input itself handles a
+        larger array value, that black-box trial-and-error couldn't pin
+        down efficiently. Left out of this release; worth revisiting with
+        deeper mito CEL investigation (or an Elastic support/GitHub issue)
+        rather than more guessing.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.7"
   changes:
     - description: >
