@@ -1,3 +1,25 @@
+- version: "0.9.12"
+  changes:
+    - description: >
+        Fix the netconsole data stream, which has never actually worked --
+        confirmed zero documents ever indexed since this package's initial
+        release. Two bugs: the default listen_port (10001) didn't match the
+        UDM-Pro's actual configured NetConsole target (5044, per Settings ->
+        CyberSecure -> Traffic Logging -> Netconsole), and the ingest
+        pipeline's grok pattern assumed a syslog-shaped wire format
+        ("TIMESTAMP HOSTNAME WORD: message") when the real Linux kernel
+        netconsole protocol is "<PRI>[kernel_seconds.microsecs] message" --
+        no hostname or subsystem token, and the bracketed timestamp is
+        relative to device boot, not wall-clock. Rewrote the grok pattern
+        to match, added unifi.netconsole.priority (decoded from the raw
+        kernel printk level 0-7) and unifi.netconsole.category (best-effort
+        classification: link_state, conntrack, oom, kernel_panic,
+        driver_error, other -- mirroring what the old Logstash
+        unifi-netconsole.conf pipeline classified via keyword matching),
+        and kept the kernel's relative uptime as a diagnostic field rather
+        than trying to use it as @timestamp.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.11"
   changes:
     - description: >

@@ -26,24 +26,51 @@ processors:
       field: service.name
       value: unifi
 
-  # NetConsole format: "TIMESTAMP HOSTNAME SUBSYSTEM: message"
+  # Real wire format is the Linux kernel netconsole protocol:
+  # "<PRI>[kernel_seconds.microsecs] message" -- e.g. "<6>[286701.123456] eth0: link up"
+  # No hostname or named subsystem token, unlike generic syslog. PRI is the
+  # raw kernel printk level (0-7), NOT a combined syslog facility*8+severity.
+  # The kernel timestamp is relative to device boot, not wall-clock, so it's
+  # kept as a diagnostic field rather than used for @timestamp (event
+  # ingestion time is used instead, which is the default when untouched).
   - grok:
       tag: grok_netconsole
       field: message
       patterns:
-        - "%{SYSLOGTIMESTAMP:_tmp.timestamp} %{HOSTNAME:host.name} %{WORD:process.name}: %{GREEDYDATA:message}"
-        - "%{HOSTNAME:host.name} %{WORD:process.name}: %{GREEDYDATA:message}"
+        - "^<%{NONNEGINT:_tmp.priority}>\\[%{NUMBER:unifi.netconsole.kernel_uptime_sec:float}\\]\\s*%{GREEDYDATA:message}"
       ignore_failure: true
 
-  - date:
-      tag: parse_timestamp
-      field: _tmp.timestamp
-      formats:
-        - "MMM  d HH:mm:ss"
-        - "MMM dd HH:mm:ss"
-        - "ISO8601"
-      timezone: UTC
-      target_field: "@timestamp"
+  - script:
+      tag: set_priority_name
+      if: ctx._tmp?.priority != null
+      source: >
+        String[] levels = new String[] {"emerg","alert","crit","err","warning","notice","info","debug"};
+        int p = Integer.parseInt(ctx._tmp.priority);
+        if (p >= 0 && p < levels.length) {
+          ctx.unifi.netconsole.priority = levels[p];
+        }
+      ignore_failure: true
+
+  # Best-effort event classification, mirroring what the old Logstash
+  # pipeline classified via keyword matching on the kernel message text.
+  - script:
+      tag: classify_netconsole_event
+      if: ctx.message != null
+      source: >
+        String m = ctx.message.toLowerCase();
+        String category = "other";
+        if (m.contains("link is not ready") || m.contains("link becomes ready") || m.contains("link up") || m.contains("link down")) {
+          category = "link_state";
+        } else if (m.contains("nf_conntrack") || m.contains("conntrack: table full")) {
+          category = "conntrack";
+        } else if (m.contains("out of memory") || m.contains("oom-kill") || m.contains("killed process")) {
+          category = "oom";
+        } else if (m.contains("kernel panic") || m.contains("kernel bug") || m.contains("call trace")) {
+          category = "kernel_panic";
+        } else if (m.contains("driver") && (m.contains("error") || m.contains("fail"))) {
+          category = "driver_error";
+        }
+        ctx.unifi.netconsole.category = category;
       ignore_failure: true
 
   - remove:

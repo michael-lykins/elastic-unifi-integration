@@ -17,6 +17,12 @@ streams:
       - name: listen_port
         type: integer
         title: Listen Port
-        description: UDP port to receive NetConsole messages on (default 10001).
-        default: 10001
+        description: >
+          UDP port to receive NetConsole messages on. Default matches the
+          UDM-Pro's actual configured NetConsole target (Settings ->
+          CyberSecure -> Traffic Logging -> Netconsole) rather than the
+          Linux netconsole driver's conventional 6666 -- if your device
+          sends to a different port, update this to match rather than
+          reconfiguring the device.
+        default: 5044
         required: true

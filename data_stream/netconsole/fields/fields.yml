@@ -1,1 +1,18 @@
-[]
+- name: unifi.netconsole.kernel_uptime_sec
+  type: float
+  description: >
+    Kernel timestamp embedded in the NetConsole message, in seconds since
+    device boot (not wall-clock time). @timestamp reflects when Elastic
+    Agent received the UDP packet instead.
+
+- name: unifi.netconsole.priority
+  type: keyword
+  description: >
+    Kernel printk log level embedded in the message (emerg, alert, crit,
+    err, warning, notice, info, debug).
+
+- name: unifi.netconsole.category
+  type: keyword
+  description: >
+    Best-effort classification of the kernel message: link_state,
+    conntrack, oom, kernel_panic, driver_error, or other.
