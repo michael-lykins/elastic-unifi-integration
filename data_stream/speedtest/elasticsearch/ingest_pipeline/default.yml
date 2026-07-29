@@ -1,0 +1,46 @@
+---
+description: Pipeline for UniFi historical speedtest results
+processors:
+  - set:
+      field: ecs.version
+      value: "8.11.0"
+  - set:
+      field: event.kind
+      value: metric
+  - set:
+      field: event.type
+      value: info
+
+  - date:
+      tag: parse_test_time
+      field: unifi.speedtest.test_time_ms
+      target_field: unifi.speedtest.test_time
+      formats:
+        - UNIX_MS
+      if: ctx.unifi?.speedtest?.test_time_ms != null && ctx.unifi.speedtest.test_time_ms != 0
+      ignore_failure: true
+
+  - remove:
+      tag: remove_test_time_ms
+      field: unifi.speedtest.test_time_ms
+      ignore_missing: true
+
+  # Use UniFi's own record ID as the Elasticsearch document _id so
+  # re-polling the overlapping 24h window overwrites the same document
+  # instead of creating a duplicate for every poll cycle.
+  - set:
+      tag: set_document_id_from_record_id
+      field: _id
+      value: "{{{unifi.speedtest.record_id}}}"
+      if: ctx.unifi?.speedtest?.record_id != null && ctx.unifi.speedtest.record_id != ""
+
+on_failure:
+  - append:
+      field: error.message
+      value: >-
+        Processor {{ _ingest.on_failure_processor_type }} (tag:
+        {{ _ingest.on_failure_processor_tag }}) failed with message:
+        {{ _ingest.on_failure_message }}
+  - set:
+      field: event.kind
+      value: pipeline_error

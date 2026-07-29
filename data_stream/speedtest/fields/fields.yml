@@ -1,0 +1,22 @@
+- name: unifi.speedtest.record_id
+  type: keyword
+  description: >
+    UniFi's own record ID for this speed test result. Used as the
+    Elasticsearch document _id so repeated polling of the overlapping
+    lookback window doesn't create duplicate documents.
+
+- name: unifi.speedtest.test_time
+  type: date
+  description: When the speed test actually ran (distinct from @timestamp, which reflects poll time).
+
+- name: metrics.unifi.speedtest.down_mbps
+  type: float
+  description: Download throughput measured during this speed test, in Mbps.
+
+- name: metrics.unifi.speedtest.up_mbps
+  type: float
+  description: Upload throughput measured during this speed test, in Mbps.
+
+- name: metrics.unifi.speedtest.latency_ms
+  type: integer
+  description: Latency measured during this speed test, in milliseconds.

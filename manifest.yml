@@ -1,7 +1,7 @@
 format_version: 3.2.2
 name: unifi
 title: UniFi
-version: 0.9.14
+version: 0.9.17
 description: >
   Monitor UniFi network devices using the UniFi Network Local API and syslog.
   Collects per-device metrics (WAN stats, uplink latency, speedtest results,
@@ -89,6 +89,23 @@ policy_templates:
               UDM-Pro/UDM-SE and API key as the Network API. Protect data is
               capability/config only and changes rarely — 5m or longer is recommended.
             default: 5m
+            required: true
+          - name: config_interval
+            type: text
+            title: Network/WLAN Config Collection Interval
+            description: >
+              How often to poll WLAN (SSID) and network/VLAN configuration.
+              Changes rarely — 5m or longer is recommended.
+            default: 5m
+            required: true
+          - name: speedtest_interval
+            type: text
+            title: Speedtest History Collection Interval
+            description: >
+              How often to poll for new speed test results. UniFi typically
+              runs one test per day; polling every 15m or longer is enough
+              to pick up new results promptly without excessive requests.
+            default: 15m
             required: true
       - type: udp
         title: UniFi Syslog (UDP)

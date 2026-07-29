@@ -209,3 +209,45 @@
 - name: metrics.unifi.device.storage.backup.used_pct
   type: float
   description: Percentage of the backup storage partition in use. Gateway devices only.
+
+# Per-port PoE (switches and APs with PoE-capable ports)
+- name: metrics.unifi.device.poe_ports
+  type: nested
+  description: >
+    Per-port PoE status for PoE-capable ports on this device. Port counts
+    vary widely by device (5 on an AP, 26 on a 24-port switch), so this is
+    kept as a nested array rather than expanded into named fields. Must
+    stay `nested`, not a plain object array: confirmed live that ES|QL's
+    MV_EXPAND on a plain object array field expands each sub-field as an
+    independent multivalued column with no cross-field correlation (e.g.
+    expanding port_idx does not slice power_w to the matching port), which
+    silently produces wrong per-port data. `nested` preserves the real
+    per-port correlation correctly; read it back with a nested aggregation
+    (classic Kibana Lens nested-field aggregation, or a raw DSL nested agg
+    in a Vega panel) instead of ES|QL, since ES|QL cannot query
+    nested-typed fields at all yet.
+  fields:
+    - name: port_idx
+      type: integer
+      description: Physical port number.
+    - name: name
+      type: keyword
+      description: Port name as configured in the UniFi console.
+    - name: enabled
+      type: boolean
+      description: Whether PoE output is currently enabled on this port.
+    - name: good
+      type: boolean
+      description: Whether the PoE negotiation with the connected device succeeded.
+    - name: class
+      type: keyword
+      description: Negotiated 802.3af/at/bt PoE class of the connected device.
+    - name: power_w
+      type: float
+      description: Current PoE power draw on this port in Watts.
+    - name: voltage_v
+      type: float
+      description: Current PoE output voltage on this port in Volts.
+    - name: current_ma
+      type: float
+      description: Current PoE output current on this port in milliamps.

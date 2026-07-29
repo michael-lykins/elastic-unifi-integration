@@ -1,0 +1,54 @@
+interval: {{config_interval}}
+program: |
+  // SECURITY: UniFi marks sensitive config fields with an "x_" prefix
+  // (x_wireguard_private_key, etc). Never reference an "x_"-prefixed field
+  // here -- only extract the specific named fields below.
+  request("GET",
+    state.url + "/proxy/network/api/s/{{site}}/rest/networkconf"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    {
+      "events": bytes(resp.Body).decode_json().data.map(n, {
+        "unifi": {
+          "network": {
+            "id":                    has(n._id)             ? string(n._id)             : "",
+            "purpose":               has(n.purpose)          ? string(n.purpose)         : "",
+            "enabled":               has(n.enabled)          ? n.enabled                 : true,
+            "vlan":                  has(n.vlan)             ? int(n.vlan)               : 0,
+            "ip_subnet":             has(n.ip_subnet)        ? string(n.ip_subnet)       : "",
+            "is_nat":                has(n.is_nat)           ? n.is_nat                  : false,
+            "dhcpd_enabled":         has(n.dhcpd_enabled)    ? n.dhcpd_enabled           : false,
+            "dhcpd_start":           has(n.dhcpd_start)      ? string(n.dhcpd_start)     : "",
+            "dhcpd_stop":            has(n.dhcpd_stop)       ? string(n.dhcpd_stop)      : "",
+            "networkgroup":          has(n.networkgroup)     ? string(n.networkgroup)    : "",
+            "wan_type":              has(n.wan_type)         ? string(n.wan_type)        : "",
+            "wan_networkgroup":      has(n.wan_networkgroup) ? string(n.wan_networkgroup): "",
+            "wan_failover_priority": has(n.wan_failover_priority) ? int(n.wan_failover_priority) : 0,
+            "wan_load_balance_type": has(n.wan_load_balance_type) ? string(n.wan_load_balance_type) : "",
+            "vpn_type":              has(n.vpn_type)         ? string(n.vpn_type)        : ""
+          }
+        },
+        "network": {
+          "name": has(n.name) ? string(n.name) : ""
+        },
+        "event":   {"dataset": "unifi.network", "module": "unifi"},
+        "service": {"name": "unifi"}
+      })
+    }
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-network
+  - forwarded

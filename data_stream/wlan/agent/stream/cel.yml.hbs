@@ -1,0 +1,51 @@
+interval: {{config_interval}}
+program: |
+  // SECURITY: UniFi marks sensitive config fields with an "x_" prefix
+  // (x_passphrase = plaintext WiFi password, x_iapp_key = roaming key,
+  // etc). Never reference an "x_"-prefixed field here -- only extract the
+  // specific named fields below.
+  request("GET",
+    state.url + "/proxy/network/api/s/{{site}}/rest/wlanconf"
+  ).with({
+    "Header": {
+      "X-API-KEY": ["{{api_key}}"],
+      "Accept":    ["application/json"]
+    }
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    {
+      "events": bytes(resp.Body).decode_json().data.map(w, {
+        "unifi": {
+          "wlan": {
+            "id":                 has(w._id)         ? string(w._id)         : "",
+            "enabled":            has(w.enabled)      ? w.enabled             : false,
+            "is_guest":           has(w.is_guest)     ? w.is_guest            : false,
+            "hide_ssid":          has(w.hide_ssid)    ? w.hide_ssid           : false,
+            "security":           has(w.security)     ? string(w.security)   : "",
+            "wpa_mode":           has(w.wpa_mode)     ? string(w.wpa_mode)   : "",
+            "wlan_band":          has(w.wlan_band)    ? string(w.wlan_band)  : "",
+            "wlan_bands":         has(w.wlan_bands)   ? w.wlan_bands : [],
+            "mac_filter_enabled": has(w.mac_filter_enabled) ? w.mac_filter_enabled : false,
+            "mac_filter_policy":  has(w.mac_filter_policy)  ? string(w.mac_filter_policy) : "",
+            "networkconf_id":     has(w.networkconf_id) ? string(w.networkconf_id) : ""
+          }
+        },
+        "network": {
+          "name": has(w.name) ? string(w.name) : ""
+        },
+        "event":   {"dataset": "unifi.wlan", "module": "unifi"},
+        "service": {"name": "unifi"}
+      })
+    }
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-wlan
+  - forwarded

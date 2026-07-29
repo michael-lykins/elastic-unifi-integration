@@ -1,0 +1,13 @@
+title: UniFi Speedtest History
+type: metrics
+streams:
+  - input: cel
+    title: UniFi Speedtest History
+    description: >
+      Historical WAN speed test results from the UniFi Network Local REST
+      API's report archive. Complements the single latest result already
+      carried on the device stream with a queryable trend over time. Each
+      poll re-fetches a rolling 24h window and relies on UniFi's own record
+      ID (set as the Elasticsearch document _id in the ingest pipeline) so
+      re-indexing an already-seen result overwrites rather than duplicates.
+    template_path: cel.yml.hbs

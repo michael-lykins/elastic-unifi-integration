@@ -1,0 +1,59 @@
+- name: unifi.network.id
+  type: keyword
+  description: UniFi internal network configuration ID.
+
+- name: unifi.network.purpose
+  type: keyword
+  description: Network purpose (wan, corporate, guest, vpn-server, remote-user-vpn, etc).
+
+- name: unifi.network.enabled
+  type: boolean
+  description: Whether this network is currently enabled.
+
+- name: unifi.network.vlan
+  type: integer
+  description: VLAN ID, when this network uses one.
+
+- name: unifi.network.ip_subnet
+  type: keyword
+  description: IPv4 subnet in CIDR notation, for LAN/guest/VPN networks.
+
+- name: unifi.network.is_nat
+  type: boolean
+  description: Whether NAT is applied on this network.
+
+- name: unifi.network.dhcpd_enabled
+  type: boolean
+  description: Whether the DHCP server is enabled on this network.
+
+- name: unifi.network.dhcpd_start
+  type: ip
+  description: Start of the DHCP address range.
+
+- name: unifi.network.dhcpd_stop
+  type: ip
+  description: End of the DHCP address range.
+
+- name: unifi.network.networkgroup
+  type: keyword
+  description: Internal network group name (e.g. LAN, WAN, WAN2).
+
+- name: unifi.network.wan_type
+  type: keyword
+  description: WAN connection type (e.g. dhcp, static, pppoe). WAN networks only.
+
+- name: unifi.network.wan_networkgroup
+  type: keyword
+  description: WAN interface group (WAN or WAN2). WAN networks only.
+
+- name: unifi.network.wan_failover_priority
+  type: integer
+  description: Failover priority for this WAN (lower is preferred). WAN networks only.
+
+- name: unifi.network.wan_load_balance_type
+  type: keyword
+  description: Load balancing mode for this WAN (e.g. failover-only, weighted). WAN networks only.
+
+- name: unifi.network.vpn_type
+  type: keyword
+  description: VPN implementation type (e.g. wireguard-server). VPN networks only.

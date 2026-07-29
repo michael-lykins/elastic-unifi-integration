@@ -1,3 +1,93 @@
+- version: "0.9.17"
+  changes:
+    - description: >
+        Revert 0.9.16's poe_ports field-type change. Confirmed live that a
+        plain object array doesn't actually solve the ES|QL problem the way
+        assumed: MV_EXPAND on one sub-field (e.g. port_idx) does not slice
+        sibling sub-fields (e.g. power_w) to the matching position -- each
+        expands independently, so a naive "expand and correlate" table
+        silently pairs the wrong power/voltage/current with the wrong
+        port. Reverted metrics.unifi.device.poe_ports to `type: nested`,
+        which correctly preserves per-port field correlation (that's the
+        entire purpose nested type exists for) -- it's ES|QL specifically
+        that can't query nested-typed fields at all right now, not a
+        mapping choice that can be worked around at the field-type level.
+        The per-port PoE Ports dashboard table stays unbuilt for now (same
+        broken state shipped in 0.9.14 for a different reason) pending
+        either a Vega panel using a raw DSL nested aggregation, or a
+        classic Kibana Lens visualization built interactively against the
+        nested field -- both are viable, neither was attempted blind here
+        given the risk of shipping another silently-wrong table. The
+        underlying per-port data itself is fully captured and correct;
+        this is a dashboard-presentation gap, not a data gap.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
+- version: "0.9.16"
+  changes:
+    - description: >
+        Fix metrics.unifi.device.poe_ports (added in 0.9.15) so it's
+        actually queryable: ES|QL cannot query `nested`-typed fields at
+        all, confirmed against a live cluster (`Unknown column` on a field
+        that genuinely exists and has real per-port PoE data). Changed the
+        field from `type: nested` to `type: group` (a plain object array),
+        which ES|QL's MV_EXPAND can read. This trades away nested's strict
+        per-object field correlation guarantee, but for a same-poll
+        snapshot read back via MV_EXPAND on all its sub-fields together,
+        Elasticsearch's preserved array ordering is sufficient. Existing
+        deployments need their device data stream rolled over for the
+        corrected mapping to apply, since a field's type can't be changed
+        on an already-created backing index.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
+- version: "0.9.15"
+  changes:
+    - description: >
+        Capture the remaining UniFi Network data the user asked for
+        end-to-end: per-port PoE, WLAN/SSID configuration, network/VLAN
+        configuration (including dual-WAN and VPN networks), and historical
+        speedtest results.
+
+        Per-port PoE: adds metrics.unifi.device.poe_ports (nested array,
+        one entry per PoE-capable port) to the existing device stream.
+        Deliberately does NOT reuse the temperature/storage expansion
+        pattern (flattening into named fields) since port counts vary
+        widely by device (5 on an AP, 26 on the 24-port switch) -- read
+        individual ports back out with ES|QL MV_EXPAND instead. Also
+        deliberately avoids CEL-side nested map()/filter() risk: the CEL
+        script only does a flat .filter() passthrough (matching the
+        temperatures_raw/storage_raw pattern that's proven safe), and all
+        per-port field normalization happens in the ingest pipeline via
+        Painless, not in CEL. Verified via _simulate against real
+        USW Pro 24 PoE port_table data before touching live Fleet.
+
+        New wlan and network data streams poll wlanconf/networkconf.
+        SECURITY NOTE: both endpoints return live secrets in "x_"-prefixed
+        fields (x_passphrase is the plaintext WiFi password,
+        x_wireguard_private_key is a real VPN private key) -- confirmed
+        live on this network during development. Neither stream references
+        any "x_"-prefixed field; only an explicit allowlist of safe config
+        fields (SSID name/security/VLAN/enabled, network purpose/subnet/
+        WAN-failover-priority/VPN-type) is extracted.
+
+        New speedtest data stream polls the report archive on a rolling
+        24h window (same POST-with-time-range shape as the existing dpi
+        stream) to get trend data, not just the single latest result
+        already on the device stream. Overlapping poll windows would
+        normally re-index the same historical result repeatedly; fixed by
+        carrying UniFi's own record ID through and setting it as the
+        Elasticsearch document _id in the ingest pipeline, making repeated
+        ingestion of the same result idempotent. Verified via _simulate.
+
+        Explicitly NOT changed: UniFi Protect motion/smart-detect events
+        (needs a WebSocket client, still architecturally incompatible with
+        CEL polling) and firewall event log volume (this network only has
+        logging enabled on 1 of 66 policies -- a UDM-Pro config change for
+        the user to make, not a pipeline gap). portconf, firewallgroup,
+        routing, dynamicdns, and portforward all return empty on this
+        network (unused features) -- not built, straightforward to add
+        later the same way if the user starts using them.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.14"
   changes:
     - description: >

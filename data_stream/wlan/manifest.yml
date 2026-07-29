@@ -1,0 +1,11 @@
+title: UniFi WLAN Configuration
+type: logs
+streams:
+  - input: cel
+    title: UniFi WLAN Configuration
+    description: >
+      SSID/WLAN configuration snapshot from the UniFi Network Local REST API.
+      Config data only -- security mode, VLAN, guest/hidden flags. Never
+      captures WiFi passphrases or other UniFi "x_"-prefixed sensitive
+      fields (see cel.yml.hbs comment).
+    template_path: cel.yml.hbs

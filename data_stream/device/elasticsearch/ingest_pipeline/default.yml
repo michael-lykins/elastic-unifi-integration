@@ -114,6 +114,32 @@ processors:
           }
         }
 
+  # Normalize the switch/AP port_table array (already filtered to PoE-capable
+  # ports by the CEL script) into metrics.unifi.device.poe_ports -- a nested
+  # array, one entry per port, not flattened into named fields like the
+  # temperature/storage expansions above. Port counts vary a lot by device
+  # (5 on an AP, 26 on the 24-port switch), so there's no small fixed set of
+  # names to expand into; per-port breakdowns are read back out with ES|QL
+  # MV_EXPAND at query time instead.
+  - script:
+      tag: normalize_poe_ports
+      if: ctx.unifi?.device?.poe_ports_raw != null && !ctx.unifi.device.poe_ports_raw.isEmpty()
+      source: >-
+        List ports = new ArrayList();
+        for (p in ctx.unifi.device.poe_ports_raw) {
+          Map port = new HashMap();
+          port.put('port_idx', p.port_idx);
+          port.put('name', p.name);
+          port.put('enabled', p.poe_enable != null ? p.poe_enable : false);
+          port.put('good', p.poe_good != null ? p.poe_good : false);
+          port.put('class', p.poe_class != null ? p.poe_class : '');
+          port.put('power_w', p.poe_power != null ? p.poe_power : '0');
+          port.put('voltage_v', p.poe_voltage != null ? p.poe_voltage : '0');
+          port.put('current_ma', p.poe_current != null ? p.poe_current : '0');
+          ports.add(port);
+        }
+        ctx.metrics.unifi.device.poe_ports = ports;
+
   - remove:
       tag: remove_temperatures_raw
       field: unifi.device.temperatures_raw
@@ -122,6 +148,11 @@ processors:
   - remove:
       tag: remove_storage_raw
       field: unifi.device.storage_raw
+      ignore_missing: true
+
+  - remove:
+      tag: remove_poe_ports_raw
+      field: unifi.device.poe_ports_raw
       ignore_missing: true
 
 on_failure:

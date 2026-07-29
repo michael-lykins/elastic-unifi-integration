@@ -1,0 +1,58 @@
+interval: {{speedtest_interval}}
+program: |
+  // Rolling 24h window on every poll. UniFi runs one speed test roughly
+  // once a day, so overlapping polls will re-fetch already-seen results --
+  // record_id (UniFi's own record _id) is carried through so the ingest
+  // pipeline can set it as the Elasticsearch document _id, making repeated
+  // ingestion of the same result idempotent instead of duplicating it.
+  request("POST",
+    state.url + "/proxy/network/api/s/{{site}}/stat/report/archive.speedtest"
+  ).with({
+    "Header": {
+      "X-API-KEY":    ["{{api_key}}"],
+      "Content-Type": ["application/json"],
+      "Accept":       ["application/json"]
+    },
+    "Body": bytes(
+      "{\"attrs\":[\"xput_download\",\"xput_upload\",\"latency\",\"time\"],\"start\":" +
+      string((int(now) - 86400) * 1000) + ",\"end\":" + string(int(now) * 1000) + "}"
+    )
+  }).do_request().as(resp, resp.StatusCode == 200 ?
+    {
+      "events": bytes(resp.Body).decode_json().data.map(r, {
+        "unifi": {
+          "speedtest": {
+            "record_id": has(r._id) ? string(r._id) : "",
+            // Milliseconds since epoch when the test actually ran, kept
+            // separate from @timestamp (which reflects poll/ingest time)
+            // since setting @timestamp from source data isn't a pattern
+            // proven elsewhere in this package.
+            "test_time_ms": has(r.time) ? int(r.time) : 0
+          }
+        },
+        "metrics": {
+          "unifi": {
+            "speedtest": {
+              "down_mbps": has(r.xput_download) ? double(r.xput_download) : 0.0,
+              "up_mbps":   has(r.xput_upload)   ? double(r.xput_upload)   : 0.0,
+              "latency_ms": has(r.latency)      ? int(r.latency)          : 0
+            }
+          }
+        },
+        "event":   {"dataset": "unifi.speedtest", "module": "unifi"},
+        "service": {"name": "unifi"}
+      })
+    }
+  :
+    {
+      "events": [],
+      "want_more": false
+    }
+  )
+resource.url: '{{url}}'
+state:
+  url: '{{url}}'
+resource.ssl.verification_mode: '{{ssl_verification_mode}}'
+tags:
+  - unifi-speedtest
+  - forwarded

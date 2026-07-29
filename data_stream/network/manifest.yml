@@ -1,0 +1,11 @@
+title: UniFi Network Configuration
+type: logs
+streams:
+  - input: cel
+    title: UniFi Network Configuration
+    description: >
+      Network/VLAN configuration snapshot from the UniFi Network Local REST
+      API -- WAN, LAN, guest, and VPN network definitions. Config data only.
+      Never captures WireGuard private keys or other UniFi "x_"-prefixed
+      sensitive fields (see cel.yml.hbs comment).
+    template_path: cel.yml.hbs

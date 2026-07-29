@@ -1,0 +1,43 @@
+- name: unifi.wlan.id
+  type: keyword
+  description: UniFi internal WLAN configuration ID.
+
+- name: unifi.wlan.enabled
+  type: boolean
+  description: Whether this SSID is currently enabled.
+
+- name: unifi.wlan.is_guest
+  type: boolean
+  description: Whether this is a guest network.
+
+- name: unifi.wlan.hide_ssid
+  type: boolean
+  description: Whether the SSID is hidden from broadcast.
+
+- name: unifi.wlan.security
+  type: keyword
+  description: Security mode (e.g. wpapsk, wpaeap, open).
+
+- name: unifi.wlan.wpa_mode
+  type: keyword
+  description: WPA mode (e.g. wpa2, wpa3).
+
+- name: unifi.wlan.wlan_band
+  type: keyword
+  description: Configured band setting (e.g. both, 2g, 5g).
+
+- name: unifi.wlan.wlan_bands
+  type: keyword
+  description: List of radio bands this SSID is broadcast on.
+
+- name: unifi.wlan.mac_filter_enabled
+  type: boolean
+  description: Whether MAC address filtering is enabled for this SSID.
+
+- name: unifi.wlan.mac_filter_policy
+  type: keyword
+  description: MAC filter policy (allow or deny) when enabled.
+
+- name: unifi.wlan.networkconf_id
+  type: keyword
+  description: ID of the network/VLAN this SSID is mapped to.
