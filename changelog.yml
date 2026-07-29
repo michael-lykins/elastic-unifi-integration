@@ -1,3 +1,38 @@
+- version: "0.9.14"
+  changes:
+    - description: >
+        Fix the bundled Kibana dashboards, which were still built against
+        metrics-unifi.api-default -- the old Logstash unifi-api pipeline's
+        index, superseded by this package's own device CEL stream and never
+        migrated to the new cluster. UniFi Gateway & Switch Health (8 of 18
+        panels) and UniFi Topology (the Vega network diagram, which failed
+        entirely since one bad embedded query breaks the whole spec) both
+        pointed at the dead index and the old field names (device.name,
+        device.type). Repointed both at metrics-unifi.device-default and
+        remapped device.name -> host.name, device.type -> unifi.device.type
+        (the underlying metric fields were already identical between the
+        two pipelines). Total PoE Draw W and the topology view's PoE total
+        were rewritten to sum the device-level poe_power_w total across
+        devices, since there's no per-port PoE data in CEL. The PoE Ports
+        detail table (per-port breakdown) is left broken on purpose --
+        that data was never built into the CEL device stream, so there's
+        nothing to point it at yet. Also removed the orphaned
+        kibana/index_pattern/unifi-api-dv.json data view, which pointed at
+        the same dead index and wasn't referenced by any dashboard.
+
+        Separately confirmed NOT a bug: Firewall Events Over Time, Top
+        Targeted Ports, Top Firewall Source IPs, Top Firewall Rules, and
+        Rule Hit Activity show no data because only 1 of 66 firewall
+        policies has logging enabled on this network, not because the
+        events pipeline is broken -- its iptables grok/classification
+        logic (event.category=firewall, event.action=firewall_block/accept)
+        is intact and correct. Likewise IPS Detections by Signature and
+        Controller Alarms show "unknown index" because logs-unifi.ips_event
+        and logs-unifi.alarm have never produced a document on this
+        network (same pre-existing sparse-stream situation as netconsole),
+        not because anything is misconfigured.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.13"
   changes:
     - description: >
