@@ -1,3 +1,26 @@
+- version: "0.9.18"
+  changes:
+    - description: >
+        Build the PoE Ports per-port table using a Vega panel with a raw
+        Elasticsearch DSL nested aggregation (terms on host.name -> nested
+        agg on poe_ports -> filter enabled -> terms on port_idx -> max
+        power_w/voltage_v/current_ma), replacing the Lens/ES|QL panel that
+        couldn't query the nested field at all. Verified live with real
+        correlated per-port data (e.g. port 24: 7.6W/53.8V/142mA) rendered
+        correctly on SA-ML-Home-O11y.
+
+        Also fixes a real bug found while verifying the above: Gateway
+        CPU % and Gateway Memory % were silently broken since the 0.9.14
+        dashboard fix, querying `unifi.unifi.device.type` (double-prefixed)
+        instead of `unifi.device.type`. Caused by re-running a broad
+        string substitution on already-fixed content during that earlier
+        fix pass -- the second pass's un-scoped "device.type" ->
+        "unifi.device.type" replacement matched inside the field name its
+        own first pass had already produced. Swept every dashboard file
+        in the package for the same "X.X." double-prefix pattern; no
+        other instances found.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.17"
   changes:
     - description: >
