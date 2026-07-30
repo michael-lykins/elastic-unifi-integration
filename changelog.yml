@@ -1,3 +1,22 @@
+- version: "0.9.20"
+  changes:
+    - description: >
+        Revert netconsole's listen_port default from 5044 back to 10001.
+        The 0.9.12 fix changed it to 5044 to match the UDM-Pro's then-live
+        configured NetConsole target, but a subsequent UniFi Network app
+        update reorganized the CyberSecure/Traffic Logging UI and reset
+        (or the user's config otherwise reverted to) the NetConsole target
+        back to port 10001 -- confirmed directly from the live UI
+        (Settings -> CyberSecure -> Traffic Logging -> Netconsole Server
+        Address 192.168.1.92:10001), which is also UniFi's factory
+        default. This exactly explains why netconsole has continued to
+        receive zero documents even after the 0.9.12 grok/wire-format fix
+        -- the port itself had drifted back out of sync. Updated the live
+        package policy's listen_port var on both clusters directly (var
+        values are pinned at install time, not affected by a manifest
+        default change alone).
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.19"
   changes:
     - description: >
