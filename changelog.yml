@@ -1,3 +1,26 @@
+- version: "0.9.23"
+  changes:
+    - description: >
+        Remove the alarm data stream. Its underlying endpoint
+        (legacy REST `list/alarm`, per unpoller/unifi's current
+        APIEventPathAlarms constant -- confirmed still a live, non-
+        deprecated path in that library's source, unlike ips_event)
+        returns api.err.InvalidObject on this controller (Network
+        v10.4.57) regardless of resource-name variant tried (alarm,
+        alarms, rest/alarms, list/notification, stat/alarms) --
+        confirmed live against multiple variants, contrasted against
+        a known-good resource (rest/wlanconf) succeeding with the
+        identical request shape. This is why logs-unifi.alarm-default
+        never existed, breaking the "Controller Alarms (24h)" panel on
+        the Gateway & Switch Health dashboard (confirmed via user
+        screenshot: "Unknown index [logs-unifi.alarm-default]").
+        Removed that panel along with the data stream. Unlike
+        ips_event, this isn't independently confirmed removed
+        upstream -- it may still work on other Network OS versions --
+        so treat this as environment-specific until proven otherwise
+        on a different controller.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.22"
   changes:
     - description: >
