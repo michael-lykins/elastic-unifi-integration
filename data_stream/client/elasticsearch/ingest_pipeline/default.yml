@@ -42,6 +42,19 @@ processors:
       field: observer.mac
       if: "ctx?.observer?.mac == ''"
       ignore_missing: true
+
+  # dhcp_lease_remaining_sec is a countdown (seconds until expiry), not a
+  # timestamp -- add it to @timestamp to get the actual expiry date.
+  - script:
+      tag: compute_dhcp_lease_end
+      if: >-
+        ctx.metrics?.unifi?.client?.dhcp_lease_remaining_sec != null &&
+        ctx.metrics.unifi.client.dhcp_lease_remaining_sec > 0
+      source: >-
+        ZonedDateTime polledAt = ZonedDateTime.parse(ctx['@timestamp']);
+        ctx.metrics.unifi.client.dhcp_lease_end =
+          polledAt.plusSeconds(ctx.metrics.unifi.client.dhcp_lease_remaining_sec).toString();
+      ignore_failure: true
 on_failure:
   - append:
       field: error.message

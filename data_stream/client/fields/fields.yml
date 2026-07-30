@@ -54,6 +54,20 @@
   type: integer
   description: Client experience score 0-100.
 
+- name: metrics.unifi.client.dhcp_lease_remaining_sec
+  type: long
+  description: Seconds remaining on this client's DHCP lease at poll time.
+
+- name: metrics.unifi.client.dhcp_lease_end
+  type: date
+  description: >
+    Computed absolute DHCP lease expiry (poll time + dhcp_lease_remaining_sec).
+    Not present for clients with no active lease (e.g. fixed-IP or just-disconnected).
+
+- name: metrics.unifi.client.is_fixed_ip
+  type: boolean
+  description: Whether this client has a fixed (static) IP assignment rather than a dynamic DHCP lease.
+
 - name: metrics.unifi.client.wifi.ssid
   type: keyword
   description: SSID the wireless client is associated with.
@@ -85,3 +99,17 @@
 - name: metrics.unifi.client.wifi.channel
   type: integer
   description: Wi-Fi channel number in use.
+
+- name: metrics.unifi.client.wifi.tx_retries_pct
+  type: float
+  description: Percentage of wireless transmit attempts that required a retry.
+
+- name: metrics.unifi.client.wifi.noise_dbm
+  type: integer
+  description: RF noise floor measured at the serving AP, in dBm.
+
+- name: metrics.unifi.client.wifi.ccq
+  type: integer
+  description: >
+    Client Connection Quality, UniFi's combined TX/RX link quality score
+    (0-1000 scale, higher is better).

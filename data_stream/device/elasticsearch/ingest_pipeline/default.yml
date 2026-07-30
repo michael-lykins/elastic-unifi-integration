@@ -140,6 +140,34 @@ processors:
         }
         ctx.metrics.unifi.device.poe_ports = ports;
 
+  # Normalize the per-radio stats array into metrics.unifi.device.radios --
+  # a nested array (must stay nested, not a plain object array: ES|QL's
+  # MV_EXPAND on a plain object array doesn't preserve cross-field
+  # correlation between a radio's own band/airtime/interference/retries,
+  # confirmed the hard way with poe_ports in v0.9.16/0.9.17. Read this back
+  # with a raw DSL nested aggregation instead, same as poe_ports and the
+  # PoE Ports Vega panel.
+  - script:
+      tag: normalize_radios
+      if: ctx.unifi?.device?.radios_raw != null && !ctx.unifi.device.radios_raw.isEmpty()
+      source: >-
+        List radios = new ArrayList();
+        for (r in ctx.unifi.device.radios_raw) {
+          Map radio = new HashMap();
+          radio.put('band', r.radio);
+          radio.put('channel', r.channel);
+          radio.put('tx_retries_pct', r.tx_retries_pct != null ? r.tx_retries_pct : 0.0);
+          radio.put('num_stations', r.num_sta != null ? r.num_sta : 0);
+          double cuTotal = r.cu_total != null ? (double) r.cu_total : 0.0;
+          double cuSelf = (r.cu_self_rx != null ? (double) r.cu_self_rx : 0.0) +
+                          (r.cu_self_tx != null ? (double) r.cu_self_tx : 0.0);
+          double interference = cuTotal - cuSelf;
+          radio.put('airtime_pct', cuTotal);
+          radio.put('interference_pct', interference > 0 ? interference : 0.0);
+          radios.add(radio);
+        }
+        ctx.metrics.unifi.device.radios = radios;
+
   - remove:
       tag: remove_temperatures_raw
       field: unifi.device.temperatures_raw
@@ -153,6 +181,11 @@ processors:
   - remove:
       tag: remove_poe_ports_raw
       field: unifi.device.poe_ports_raw
+      ignore_missing: true
+
+  - remove:
+      tag: remove_radios_raw
+      field: unifi.device.radios_raw
       ignore_missing: true
 
 on_failure:

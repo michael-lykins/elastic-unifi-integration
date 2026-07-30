@@ -27,7 +27,8 @@ program: |
             "uptime_sec":       has(device.uptime)       ? int(device.uptime)    : 0,
             "temperatures_raw": has(device.temperatures) ? device.temperatures  : [],
             "storage_raw":      has(device.storage)      ? device.storage       : [],
-            "poe_ports_raw":    has(device.port_table)   ? device.port_table.filter(p, has(p.port_poe) && p.port_poe) : []
+            "poe_ports_raw":    has(device.port_table)   ? device.port_table.filter(p, has(p.port_poe) && p.port_poe) : [],
+            "radios_raw":       has(device.radio_table_stats) ? device.radio_table_stats : []
           }
         },
         "host": {

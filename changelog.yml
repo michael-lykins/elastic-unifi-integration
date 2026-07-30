@@ -1,3 +1,46 @@
+- version: "0.9.21"
+  changes:
+    - description: >
+        Add a per-client drill-down experience to the UniFi Clients
+        dashboard, replicating the UniFi controller's native per-client
+        Observability view as closely as Kibana allows. Client stream:
+        added tx_retries_pct, noise_dbm, ccq, dhcp_lease_end (computed
+        from the dhcpend_time countdown via Painless date-math), and
+        is_fixed_ip as flat fields (from stat/sta's
+        wifi_tx_retries_percentage/noise/ccq/dhcpend_time/use_fixedip --
+        confirmed live, previously unmapped). Device stream: added
+        per-radio band statistics (metrics.unifi.device.radios, type
+        nested) with band/channel/airtime_pct/interference_pct
+        (derived from radio_table_stats' cu_total/cu_self_rx/cu_self_tx)
+        /tx_retries_pct/num_stations -- kept nested for the same
+        cross-field-correlation reason as poe_ports (v0.9.16/0.9.17),
+        confirmed correct via _ingest/pipeline/_simulate against real
+        AP data before shipping. Dashboard: added a Controls Options
+        List client picker (bound to client.mac -- the first control
+        anywhere in this package; the exact panelsJSON/reference schema
+        was reverse-engineered from live OOTB Elastic Agent/System OTel
+        dashboards on the target cluster rather than hand-authored blind,
+        since no local precedent existed), a Client Health table, WAN
+        Latency/Up metrics, a Connectivity Logs table (from the existing
+        logs-unifi.events syslog stream -- no new capture needed), and a
+        DHCP/IP Table. Selecting a client in the picker filters every
+        panel sourced from the client or events streams down to that one
+        client; leaving it unselected shows all clients (default).
+        Scope note: a fully dynamic "AP Health" panel that resolves and
+        displays only the selected client's serving AP's radios was
+        planned but requires a two-stage reactive Vega query (client doc
+        -> observer.mac -> that AP's device doc) with no working local
+        precedent and no way to visually verify without interactive
+        Kibana access (blocked by SSO login on this browser session).
+        Shipped instead as an "AP Radios Health" table showing every AP's
+        live per-band airtime/interference/retries (same verified nested-
+        aggregation Vega pattern as the PoE Ports panel) -- the selected
+        client's AP MAC is visible in the Client Health table's "AP MAC"
+        column for manual cross-reference. The literal draggable
+        time-scrubber has no native Kibana equivalent and was not
+        attempted, per the original plan.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.20"
   changes:
     - description: >

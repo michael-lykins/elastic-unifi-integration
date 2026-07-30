@@ -251,3 +251,33 @@
     - name: current_ma
       type: float
       description: Current PoE output current on this port in milliamps.
+
+# Per-radio airtime/interference/retries (APs and gateways with radios)
+- name: metrics.unifi.device.radios
+  type: nested
+  description: >
+    Per-radio band statistics. Kept nested for the same reason as
+    poe_ports above -- cross-field correlation between a radio's own
+    band/airtime/interference/retries must be preserved; read back with a
+    nested aggregation, not ES|QL.
+  fields:
+    - name: band
+      type: keyword
+      description: Radio band identifier (e.g. ng=2.4GHz, na=5GHz, 6e=6GHz).
+    - name: channel
+      type: integer
+      description: Wi-Fi channel this radio is currently using.
+    - name: airtime_pct
+      type: float
+      description: Total channel utilization on this radio (self + external), as a percentage.
+    - name: interference_pct
+      type: float
+      description: >
+        Channel utilization on this radio not caused by this device's own
+        traffic (airtime_pct minus self-usage) -- i.e. external interference.
+    - name: tx_retries_pct
+      type: float
+      description: Percentage of transmit attempts on this radio that required a retry.
+    - name: num_stations
+      type: integer
+      description: Number of clients currently associated on this radio.

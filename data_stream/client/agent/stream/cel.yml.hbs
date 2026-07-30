@@ -38,7 +38,17 @@ program: |
               "rx_bytes_rate": "rx_bytes-r" in c  ? double(c["rx_bytes-r"]) : 0.0,
               "uptime_sec":    has(c.uptime)      ? int(c.uptime)           : 0,
               "satisfaction":  has(c.satisfaction)? int(c.satisfaction)     : 0,
+
+              // DHCP lease: dhcpend_time is seconds *remaining* until expiry
+              // (a countdown), not an absolute timestamp -- the ingest
+              // pipeline adds it to @timestamp to get the actual expiry date.
+              "dhcp_lease_remaining_sec": has(c.dhcpend_time) ? int(c.dhcpend_time) : 0,
+              "is_fixed_ip":              has(c.use_fixedip)  ? c.use_fixedip       : false,
+
               "wifi": !has(c.essid) ? {} : {
+                "tx_retries_pct": has(c.wifi_tx_retries_percentage) ? double(c.wifi_tx_retries_percentage) : 0.0,
+                "noise_dbm":      has(c.noise) ? int(c.noise) : 0,
+                "ccq":            has(c.ccq)   ? int(c.ccq)   : 0,
                 "ssid":         string(c.essid),
                 "ap_mac":       has(c.ap_mac)  ? string(c.ap_mac)  : "",
                 "signal_dbm":   has(c.signal)  ? int(c.signal)     : 0,

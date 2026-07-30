@@ -1,0 +1,22 @@
+{
+  "attributes": {
+    "allowHidden": false,
+    "fieldAttrs": "{}",
+    "fieldFormatMap": "{}",
+    "fields": "[]",
+    "name": "UniFi Client",
+    "runtimeFieldMap": "{}",
+    "sourceFilters": "[]",
+    "timeFieldName": "@timestamp",
+    "title": "metrics-unifi.client-default"
+  },
+  "coreMigrationVersion": "8.8.0",
+  "created_at": "2026-07-30T00:00:00.000Z",
+  "id": "unifi-client-dv",
+  "managed": false,
+  "references": [],
+  "type": "index-pattern",
+  "typeMigrationVersion": "7.11.0",
+  "updated_at": "2026-07-30T00:00:00.000Z",
+  "version": "WzEsMV0="
+}
