@@ -1,3 +1,34 @@
+- version: "0.9.19"
+  changes:
+    - description: >
+        Remove the ips_event data stream -- it has never worked, and can't:
+        /api/s/{site}/stat/ips/event, the legacy endpoint it polled, was
+        removed by Ubiquiti in a recent UniFi Network application update.
+        Confirmed two ways: first found and fixed a real bug in the CEL
+        script's time-range math (`int(now) / 1000000 - 3600000` doesn't
+        convert seconds to milliseconds, it produces a negative start
+        timestamp and an end timestamp of ~1970), but the endpoint still
+        returned 404 with corrected, valid timestamps. Tried 7+ path
+        variations across all three UniFi API generations this package
+        already uses elsewhere (legacy REST, Integration v1, and the
+        newer "v2" UI-internal API) -- all 404 or route to nothing.
+        Independently confirmed by a public report: Unpoller (a
+        third-party UniFi monitoring tool) hit the identical 404 on the
+        identical endpoint after a UniFi update, and its fix was the same
+        conclusion reached here -- stop polling it, there's nothing to
+        poll. IDS/IPS is genuinely enabled on this network (confirmed via
+        the live threat-category settings, a long list of active Suricata
+        rule categories), so this is a real capability loss, not a
+        feature being off. Checked whether the events (syslog) stream
+        might carry an equivalent -- it doesn't; Security Detection isn't
+        one of UniFi's remote-syslog-forwarded categories. Also removed
+        the now-orphaned "IPS Detections by Signature" dashboard panel.
+        Ubiquiti's own UI has apparently moved this to a unified system
+        log view (System Log > Security Detection) with no corresponding
+        polling API found; revisit if Ubiquiti ever re-exposes this data
+        via the Integration API.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.18"
   changes:
     - description: >
