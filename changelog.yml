@@ -1,3 +1,20 @@
+- version: "0.9.22"
+  changes:
+    - description: >
+        Fix "AP Radios Health" Vega panel on the UniFi Clients dashboard
+        rendering as a bare "Error" with no detail (confirmed live via
+        user screenshot). Root cause: the data source's
+        `format: {property: "aggregations.by_host.buckets"}` was nested
+        one level too deep, inside `url`, instead of being a sibling of
+        `url`/`name` at the data-entry level -- confirmed by diffing
+        against the working PoE Ports panel's spec pulled live from the
+        unifi-gsw-health dashboard, which has the correct (sibling)
+        placement. Without it in the right place, Vega had no way to
+        locate the bucket array in the raw ES aggregation response.
+        Connectivity Logs, Client Health, and the DHCP/IP table all
+        confirmed working correctly in the same screenshot.
+      type: bugfix
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.21"
   changes:
     - description: >
