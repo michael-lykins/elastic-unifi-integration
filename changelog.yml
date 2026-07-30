@@ -1,3 +1,26 @@
+- version: "0.9.24"
+  changes:
+    - description: >
+        Add a UniFi Protect dashboard: camera KPIs (total/connected/
+        disconnected), NVR status (arm mode, doorbell default message),
+        a full camera inventory table (state, mic, HDR, video mode,
+        package-camera, smart-detect types), a connection-state
+        breakdown, a smart-detect-type coverage bar chart (via
+        MV_EXPAND on the smart_detect_types array), and a Protect
+        Accessories table. Verified all camera/NVR panels against live
+        data (3 cameras, 1 NVR). The two accessory panels will show an
+        error state until a sensor/light/chime/viewer is ever
+        connected -- confirmed live that logs-unifi.protect_accessory-*
+        has no backing index yet (zero accessories physically present,
+        consistent with the stream's own manifest note); this is
+        structural, not a bug, and resolves itself automatically the
+        moment real accessory data exists. Used a 15-minute freshness
+        window on all panels rather than the client/device streams'
+        2-minute convention, since Protect config data polls on a 5m
+        interval by default. Added a "Protect" link to the nav strip
+        on all 9 existing dashboards for consistency.
+      type: enhancement
+      link: https://github.com/michael-lykins/elastic-unifi-integration/pull/1
 - version: "0.9.23"
   changes:
     - description: >
